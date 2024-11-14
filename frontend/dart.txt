@@ -1,0 +1,661 @@
+# Dart - programming language provided by Google
+
+--- Syntax ----------------------
+Comments:
+//  comment
+/*  multi-line comment*/
+/// documentation comment
+/** documentation multi-line comment **/
+
+Literals:
+'string'
+"string"
+10
+3.14
+
+
+--- Types --------------------------------------
+Все что можно присвоить переменным - это объект.
+Каждый объект является инстансом какого-то класса.
+Object - базовый класс для всех кроме null
+Переменные без инициализации равны null
+
+        num     ->  int -1, 0, 100;  double 3.14, -0;           // numbers
+O       String  ->  'hui' "bui" """multi""" '''pulti'''         // string
+b       bool    ->  true false                                  // booleans
+j  ->   List    ->  List<int>                                   // array/list
+e       Set     ->  Set<Object>                                 // set
+c       Map     ->  Map<int, String>                            // map
+t       Runes   ->  often replaced by the characters API)Runes
+        Symbol  ->  Symbols
+        Null    ->  null                                        // The value null
+        Enum: The superclass of all enums.
+        Future and Stream: Used in asynchrony support.
+        Iterable: Used in for-in loops and in synchronous generator functions.
+        Never: Indicates that an expression can never successfully finish evaluating. Most often used for functions that always throw an exception.
+        dynamic: Indicates that you want to disable static checking. Usually you should use Object or Object? instead.
+        void: Indicates that a value is never used. Often used as a return type.
+
+Variables:
+рекомендация использовать всегда const если возможно, если нет то final, если
+нет то var, в место конкретных типов везде используем var
+var name;                   // any type, но при присвоении тип менять нельзя
+dynamic name = 1;           // в дальнейшем можно присвоить другой тип(аля JS)
+Object name = 'Bob';        // Object type
+String name = 'Bob';        // string type
+late String description;    // не нулевая переменная, инициализируется позже
+final name = 'Bob';         // инициализируются рантайм, нельзя изменить
+final String name = 'Bob';  // ...
+const bar = 1000000;        // инициализируются при компилляции, нельзя менять
+const double atm = 1.01325; // ...
+
+Numbers:
+int i = 10;                 // integer
+double d = 3.14             // double 
+var x = 1;                  // int dynamic
+num x = 1;                  // int && double
+var hex = 0xFF88FF;         // hex
+var exponents = 1.42e5;     // exponent
+var one = int.parse('1');   // Strint -> int
+two = double.parse('1.1');  // Strint -> double
+3 << 1 == 6;                // 0011 << 1 == 0110
+3 | 4 == 7;                 // 0011 | 0100 == 0111
+3 & 4 == 0;                 // 0011 & 0100 == 0000
+
+Strings:
+'hui \n \t  \' "a" $varriable ${expr}'  // format, escape-seq
+var s1 = 'hello '                       // concatenation
+         "world!";
+var s2 = 'hello ' + "world!"            // ...
+var s3 = '''multi-line                  // ''' or """
+string''';
+var s4 = r'Hello\n';                    // raw string -> 'Hello\n'
+String one = 1.toString();              // int -> String
+String pi = 3.14159.toStringAsFixed(2); // double -> String with precision .00
+str.contains('hui');                    // -> bool
+str.startsWith('hui');                  // ...
+str.endsWith('hui');                    // ...
+str.substring(6, 9);                    // -> String [from;to)
+var parts = '1, 2, 3'.split(', ');      // -> List ['1','2','3']
+str.toUpperCase();                      // -> String
+str.toLowerCase();                      // -> String
+'  hello  '.trim();                     // -> String
+str.isEmpty;                            // -> bool
+str.isNotEmpty;                         // -> bool
+str.replaceAll(RegExp('NAME'), 'Bob');  // -> String
+
+RegExp:
+регулярки такие же как и в др ЯП *+?^$[]
+var numbers = RegExp(r'^\d{6}$');       // 6 цифр от начала до конца
+numbers.hasMatch("999999");             // -> bool
+
+StringBuffer:
+var sb = StringBuffer();
+sb                                      // .. -> cascade expression
+  ..write('Use a StringBuffer for ')    // add String
+  ..writeAll(['a', 'b', 'c'], ' ')      // добавить эл-ты из списка через пробел 
+  ..write('.');
+
+Null safety:
+При созданиии переменной определить что она 100% не null, чтоб не проверять
+int a;      // integer не может быть null, можно не проверять по коду
+int? b;     // integer or null - может быть null
+int c = b!; // принебречь, считать что b точно не null
+int? d = b; // integer or null
+
+Type checking:
+someVar.runtimeType     // у каждого эл можно посмотреть тип
+someVar is String       // -> bool
+
+Casting:
+приведение типов
+200.toString();         // int -> String
+int.tryParse('2a');     // try parse -> null если не распарсил
+int.parse('200');       // String -> int
+var a = obj as String   // из неопр типа(dynamic) в конкретный тип
+
+DateTime:
+var dateTime = DateTime.now();                  // now
+DateTime.utc(1989, 11, 9);                      // 1989-11-9
+DateTime.november == dateTime.month;            // сравнить месяцы
+var dateTime = DateTime.parse('2023-01-23');    // from String
+dateTime1.isBefore(dateTime2);                  // разл сравнения
+dateTime1.isAtSameMomentAs(dateTime2);          // тоже время?
+dateTime.year;                                  // разл поля
+dateTime1.difference(dateTime2).inDays          // разница в опред
+DateTime(date.year - 18, date.month, date.day); // отнять 18 лет от какой-то даты(date)
+sleep(Duration(seconds: 2));                    // sleep на опр длительность
+
+
+--- Generics ------------------------------------------------
+нужны для создания универсальных конструкций под любые классы
+generic methods:
+T first<T>(List<T> ts) {    // принимает List опред типа и возвращ 1-ый эл этого типа
+  return = ts[0];
+}
+first([1,2,3]);             // -> 1
+
+generic class:
+class Stack<T> {            // класс используемый с люб типом
+  List<T> storage = [];     // коллекция с этим типом
+  T element;                // один элемент
+  Stack(this.element);      // конструктор
+  T getFirst() {            // метод возвращ этот же тип
+    return storage[0];
+  }
+}
+Stack stack = Stack(300);         // в скобках не обяз указывать тип, будет <int>
+Stack stack = Stack<double>(300); // принудительно указываем что это <double>
+
+abstract class Cache<T> {   // абстрактный класс с неопред типом
+  T getByKey(String key);
+  void setByKey(String key, T value);
+}
+
+class MyCache implements Cache<int> {
+  @override                 // подставляем свой тип и имплементим методы
+  int getByKey(String key) {
+    return 23;
+  }
+
+  @override
+  void setByKey(String key, int value) {
+    print(key);
+  }
+}
+
+ограничения:
+<T extends num>   // num и его наследники
+
+несколько
+<R> foo <T, Z>(T t, Z z) => otherFoo(t, z); // принимает два разных типа, возвр третий
+
+
+--- Collections -------------------------------
+List:
+var list = [1, 2, 3];       // list of integers
+List<int> list = [1,2,3];   //
+var list = <int>[1,2,3];    //
+var constL = const [1,2,3]; // const list is not allowed to change
+var list2 = [...list, 5,6]; // spresd operator, вставка других массивов, в люб место
+var list2 = [...?list, 5];  // если list null -> просто ничего не вставит
+var nav = ['Home', 'Furniture', 'Plants', if (promoActive) 'Outlet'];   // if inside
+var listOfStrings = ['#0', for (var i in listOfInts) '#$i'];            // for inside
+
+Set:
+var set = {'a','b','c'};    // 
+var set = <String>{}        // 
+Set<String> set = {1,2}     // 
+
+Map:
+var map = {1:'a',2:'b'};    //
+var map2 = <int,String>{};  //
+Map<String, String> map;    //
+map[2] = 'hui';             // доступ к значению по  ключу
+
+Casting:
+final newList = oldList as List<int>(); // привести тип самого списка
+final newList = oldList.cast<int>();    // привести все эл списка к int 
+
+Обход коллекций:
+var list = [1,2,3];
+list.forEach(foo);                      // foo - функция или перем ссыл на функцию
+list.forEach((el) => print('$el%%%'));  // обход, анонимная функция(лямбда)
+list.map((el) => el*el);                // мэп, изменяет кажд эл согласно функции
+list.where((el) => el > 100);           // фильтр, пропускает те что соотв условию
+list                                    // цепочка методов
+    .where((el) => el >= 5)
+    .forEach((el) => foo(el));  
+
+Сортировка коллекций:
+final list = [3,4,0,1,2,7];
+list.sort((a,b) => a.compareTo(b));     // сортировка происходит с пом ф-ии
+print(list);                            // [0, 1, 2, 3, 4, 7]
+
+--- Functions -----------------------------------------------------------------
+Функции имеют тип Function, toString() возвращает представ: '(dynamic) => void'
+обычное объявление функции
+bool foo(int atomicNumber) {                                        // function
+  return _nobleGases[atomicNumber] != null;
+}
+стрелочная ф-я для однострочных инструкций
+bool foo(int atomicNumber) => _nobleGases[atomicNumber] != null;    // the same
+можно присвоить функцию переменной
+bool foo = (msg) => '!!! ${msg.toUpperCase()} !!!';
+
+Params:
+void foo(a, b){}            // позиционные пар без типа - становятся dynamic
+void foo(int a, int b){}    // позиционные пар c типом
+foo(a, [String other]){}    // опциональный/необяз позиц параметр, по умолч = null
+foo(a, [String other = '']) // опциональный/необяз позиц параметр со знач по умолч
+foo({a, b}){}               // {} - именованные/необяз параметры без типа по умолч null
+foo({int? a, int? b}){}     // параметры с с конкретным типом, ? - обязателен
+foo({a=5, int b=3}){}       // значение по умолчанию
+foo({a=5, required b})      // обязательный параметр люб тип, может быть null
+foo({a=5, required int b})  // обязательный параметр с конк типом не может принимать null
+foo({a=5, required int? b}) // обязательный параметрс конк типом, но может быть null
+
+
+Calls:
+foo(2, 3);                  // positional 
+foo(a:2, b:3);              // named
+
+Return:
+все функции что-то возвращают, если void - то null
+foo()
+
+Closure/Замыкания:
+Функция сохраняет доступ к своему лексическому окружению на момент сохранения
+main() {
+  var foo = closure();
+  print(foo(30));   // [1,2,3,4,30] - сохраняет лекс окружение, доступ остался
+}
+closure() {         // ф-я возвращает другую ф-ю со своей областью видимости
+  var list = [1,2,3,4];
+  foo (int a){      // имеет доступ к list
+    list.add(a);
+    return list;
+    }
+  return foo;       // соохранят доступ к list
+}
+
+typedef:
+int foo(int Function(int) f) {          // функция принимающ др функцию 
+  return f(100);   ^-------------------------------------------------+
+}                                                                    |
+typedef MyAlias = int Function(int);    // создаем alias на основе --+
+typedef int MyAlias(int);               // устар вариант 
+int foo(MyAlias f) {                      // переписываем в норм виде
+  ...
+
+
+--- Operators -------------------------------------------
+- ++ --             // унарные - negative, prefix postfix 
++ - * / % ~/        // арифметические ~/ - целочисленное деление
+== != > < >= <=     // сравнения
+as is is!           // типовые, is! - is not - сравнение с типом
+= += -= *= ...      // присвоение
+! && ||             // логические
+& | ^ ~ << >> >>>   // битовые
+?. ?[]              // проверка на null при обращении к св-ву, индексу
+!                   // foo!.bar если null - то выбрас исключение
+
+Conditional expressions:
+condition ? expr1 : expr2           // тернарный
+expr1 ?? expr2                      // если певый не null то он, иначе второй
+value ??= 6;                        // только если value = null оно станет = 6  
+var name = expr ? 'yes' : 'no';     // examples
+var getName(String? name) => name ?? 'Guest';   // удобная проверка на null
+
+Cascade notation:
+(синт сахар)применить сразу много медотов к одному объекту
+..  - каскадное применение различных действий к объекту
+?.. - то же самое но с проверкой на null
+querySelector('#confirm')           // Get an object.
+  ?..text = 'Confirm'               // Use its members.
+  ..classes.add('important')
+  ..onClick.listen((e) => window.alert('Confirmed!'))
+  ..scrollIntoView();
+Original
+var button = querySelector('#confirm');
+button?.text = 'Confirm';           // если есть такое поле - то присвоение
+button?.classes.add('important');
+button?.onClick.listen((e) => window.alert('Confirmed!'));
+button?.scrollIntoView();
+
+
+--- Standart constructions -----------------------------------------------
+if(expr1) {         switch(value) {     for(var i = 0; i < 10; i++) {
+    code;               case '1':           callbacks.add(() => print(i));
+} else if(expr2){           code;      }
+    code;                   break;
+} else {                case '2':       for(final c in callbacks) {
+    code;                   code;           c();
+}                           break;      }
+                        default:
+                            code;       collection.forEach(print);
+                    }
+
+while (!isDone()) {         do {
+    doSomething();              doSomething();
+    break;                      continue;
+}                           } while(!isDone());
+
+
+--- Assert -------------------------------------------------------
+В течение разработки можно использовать ассерты
+assert(condition, optionalMessage); // true/false + свое сообщение
+assert(text != null);   // если то что в скобках false - AssertionError
+
+
+--- Exceptions ---------------
+все исключения unchecked
+try {
+    breedMoreLlamas();
+} on OutOfLlamasException {     // конкретный exception    
+    buyMoreLlamas();
+} on Exception catch (e) {      // общ класс, e - message    
+    print('Unknown exception: $e');
+} catch (e, s) {                // s - stacktrace
+    print('Something really unknown: $s');
+    rethrow;                    // Allow callers to see the exception
+} finally {
+     cleanLlamaStalls();        // всегда выполняется
+
+Throw:
+выбрасывание исключений
+throw FormatException('Expected at least 1 section');   // спец искл
+throw 'Out of llamas!';                                 // Error без типа
+
+
+--- Class ------------------------------------------------
+множественное наследование не поддерживается, есть миксины
+все кастомные классы по умолчанию наследуются от Object
+
+class Point {
+  // fields
+  int a;        // должна быть иниц в конструкторе
+  double? x;    // может не иниц в конструкторе так как '?'
+  _double y;    // переменная нач с _ видна в этом же пакете/файле    
+  double z = 0; // иниц нулем
+  
+  // constructors
+  Point();      // конструктор по умолчанию выглядит так если не определен
+
+  Point(double x, double y) {       -> Point(this.x, this.y); // the same  
+    this.x = x;                     
+    this.y = y;
+  }
+  // еще одна запись конструктора
+  Point(double z) 
+      : x = z,
+        y = z;
+  // Named constructor
+  Point({double? x, double? y}) {   -> Point({this.x, this.y}); // the same  
+    this.x = x;                     
+    this.y = y;
+  }
+  // кастомный конструктор, дополнительный + синтаксис без скобок
+  Point.origin()
+      : x = xOrigin,
+        y = yOrigin;
+  // кастомный конструктор, вызывается так: var p1 = Point.mySet(20);
+  Point.mySet(this.y) {               // спец синтаксис
+    x = 30; 
+  }
+
+  String init() => 'Initialization';  // some method
+
+  @override
+  String toString() => '$x : $ y';    // переопределить toString
+
+  // getters setters
+  // название может быть любым, помечаем get или set для того чтобы обращаться
+     не как к функции, а как к полю
+  String get title {                  // свой сеттер -> вызывается o.title
+    return _title.toUpperCase();
+  }
+
+  set title(String newTitle) {        // свой геттер -> выз-ся o.title = ''
+    if (newTitle.isEmpty) {
+      throw 'Fuck you!';
+    } else {
+      _title = newTitle;
+    }
+  }
+
+  // переопределение операторов
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||       // проверка на один и тот же объект
+      other is Article && other.body == body; // тут на то что нужный тип + свое
+}
+
+var p1 = Point(2, 2);       // use constructor 
+var p2 = new Point(2, 2);   // the same - new не обязателен!
+var p = const CPoint(2, 2); // использовать синглтон(константный конструктор)
+все поля имеют default геттеры и сеттеры(если не final)
+p1.x = 100;                 // setter
+print(p1.x);                // getter
+var a = p1?.y;              // обратится если не null
+
+--- Static ---
+class Car {
+  int sum;                                    // доступна для обьектов класса
+  static int totalCar = 0;                    // доступна Классу 
+  static const url = 'https://sdafasdf.asf';  
+  static void foo() => print(totalCar);       // имеет доступ только к статик перем
+                                                 может вызываться с пом Класса
+  void foo2() => print(totalCar + sum);       // имеет доступ ко всем
+
+  Car(this.sum);
+}
+
+--- Enums ---
+enum Color { red, green, blue } 
+
+
+--- inheritance/Наследование: --------------------------------------------------------
+наследуясь от родителя, наследник наследует все, и должен прокинуть через конструкторы
+все свойства, которые требуются в конструкторе родителя, можно пользоваться родительскими
+методами, можно преопределять их или дописывать свои.
+class Shape {
+  int square;
+  final Color color;
+
+  void method() {}
+
+  int get getSquare => square;
+
+  Shape(this.square, this.color);       // должен быть вызван в наследнике >--+
+}                                                                             |
+                                                                              |
+class Rectangle extends Shape {                                               |
+  int sideA;                                                                  |
+  int sideB;                                                                  |
+  // способы написания вызова конструктора родителя (выбрать 1)               |
+  Rectangle(this.sideA, this.sideB, super.square, super.color); // <----------+
+  Rectangle(this.sideA, this.sideB, int square, Color color) : super(square, color);
+
+  @override
+  int get getSquare => sideA * sideB; // переопределить базовый метод
+
+  @override                           // еще переопределение
+  void foo() {
+    super.foo();                      // super. - вызов через родителя
+    print('child');
+  } 
+}
+
+Под родительский класс подходят все наследники is-a
+void foo(Shape shape){}   // сюда можно передавать Shape и всех Наследников
+
+Абстрактный класс:
+abstract class Shape {}   // нельзя создать экземпляр, можно только унаследоваться
+                             можно не иметь реализации для методов и свойств
+
+--- Implements/интерфейсы---
+Имплемнтип 1 или более интерфейсов(через запятую), оверрайдим методы,
+либо делаем класс абстрактным.
+Везде где требуются тип Интрейфейса - подходят его имплементатели.
+abstract class Fillable {         // интерфейс
+  void fill(double volume);       // метод который надо переопределить
+}                                 // могут быть также поля
+
+class Cup implements Fillable {   // имплементация
+  @override                       // либо оверрайдим либо делаем класс абстрактным
+  void fill(double volume) {
+    print('Cup if full');
+  }
+}
+
+--- Mixin/Миксины ---
+Можно подмешивать 1 и более миксинов(через запятую), получаем доп медоты/св-ва 
+с реализацией, пользуемся.
+mixin Mechanism {                 // миксин
+  void repair() {                 // какая-то реализация
+    print('Repair details');
+  }
+}
+
+class Plane with Mechanism{       // будет иметь метод repair()
+}
+
+Порядок:
+            наследование   миксины               интерфейсы 
+class Plane extends Object with Mechanism, Beast implements Flyable, Runnable
+
+--- extension/расширение ---
+Если нужно какому-то классу/типу например String добавить метод например toDouble,
+оббъявляем extension на верхнем уровне как класс:
+extension MyExt on String {
+  double? toDouble() {            // возвращает double либо null
+    return double.tryParse(this); // this - объект на котором применяется этот метод
+  }
+}
+
+
+--- Асинхронность -------------------------------------------------------------------
+синхронная операция:  асинхронная операция блокирует вып др операций до ее завершения
+синхронная функция:   Синхронная функция выполняет только синхронные операции
+асинхронная операция: После инициирования асинхронная операция позволяет др операциям
+                      выполняться до ее завершения
+асинхронная функция:  Асинхронная функция выполняет по меньшей мере одну асинхронную 
+                      операцию и может также выполнять синхронные операции
+
+--- Future ---
+Результат асинх вычислений, возвращ рез после выполнения, основной поток не ждет этого.
+Объект класса Future<T> - результат асинхронной операции, может иметь два состояния: 
+  незавершенный:  при вызове асинх функции, она возвращает незавершенное будущее. 
+                  Это будущее ожидает завершения асинх операции ф-ии или выдачи ошибки.
+  завершенный:    если асинхронная операция завершается успешно, будущее завершается
+                  значением или ошибкой:
+                    значением:
+                    Объект типа Future<T> завершается значением типа T. Например, 
+                    future с типом Future<String> выдает строку. Если будущее не создает
+                    используемого значения, то тип будущего - Future<void>.
+                    ошибкой: 
+                    Если асинхронная операция, выполняемая функцией, по какой-либо 
+                    причине завершается неудачей, future завершается с ошибкой.
+
+Future<void> fetchUserOrder() {     // асинх ф-я , возвращ объект Future без значения
+  // асинхронная операция, Future.delayed - конструктор, созд объект после задержки
+  var future = Future.delayed(const Duration(seconds: 2), // ждет 2 с
+      () => print('Large Latte'));                        // исполняет callback
+      () => throw Exception('Some Error'));               // пример с ошибкой(см output)
+  return future;
+}
+
+void main() {
+  fetchUserOrder();                 // вызов асинхронной функции <--+
+  print('Fetching user order...');  // выполняется дальше, не ждет -+
+}
+
+Output:
+  // без ошибки           // с ошибкой
+  Fetching user order...  Fetching user order...
+  Large Latte             Uncaught Error: Some Error
+
+// конструкторы
+Future(FutureOr<T> computation()) Creates a future containing the result of calling computation asynchronously with Timer.run.factory
+Future.delayed(Duration duration, [FutureOr<T> computation()?])Creates a future that runs its computation after a delay.factory
+Future.error(Object error, [StackTrace? stackTrace])Creates a future that completes with an error.factory
+Future.microtask(FutureOr<T> computation())Creates a future containing the result of calling computation asynchronously with scheduleMicrotask.factory
+Future.sync(FutureOr<T> computation())  → Future<T> синхронную функцию оборачивает в асинх
+Future.value([FutureOr<T>? value])Creates a future completed with value.factory
+// методы
+future.asStream()             → Stream<T> в поток
+future.then<R>(foo})          → Future<R> вызов foo когда завершится
+future.timeout(Duration time) → Future<T> не ждет после опр времени
+future.whenComplete(foo)      → Future<T> вызов foo когда завершится
+// статик методы
+any<T>(Iterable<Future<T>> futures) → Future<T> result of the first future in futures to complete.
+doWhile(FutureOr<bool> action())    → Future Performs an operation repeatedly until it returns false.
+forEach<T>(Iterable<T> elements, FutureOr action(T element)) → Future Performs an action for each element of the iterable, in turn.
+wait<T>(Iterable<Future<T>> futures) → Future<List<T>>Waits for multiple futures to complete and collects their results.
+
+// example
+var future = Future.delayed(Duration(seconds: 3));  // созд объект Future
+future.then((value) => print('Hello world!'));      // объявляем что должно вып после завершения 
+code;                                               // выполняется какой-то код
+---> 'Hello world'(не ранее чем через 3 сек после объявления)             
+
+--- async await ---
+Механизм который позволяет ждать выполнения асинх операций.
+async - добавить перед телом ф-ии чтобы определить асинхронную функцию
+await - работает только в асинхронных функциях, ставится перед вызовом асинх ф-ии,
+        ждет завершения, не идет дальше
+
+Future<String> createOrderMessage() async { // анинх функция
+  var order = await fetchUserOrder();       // awit ставим перед вызовом др асинх ф-ии
+  return 'Your order is: $order';
+}
+
+Future<String> fetchUserOrder() =>          // функция возвращ объет Future<String>
+    Future.delayed(
+      const Duration(seconds: 2),
+      () => 'Large Latte',
+    );
+
+Future<void> main() async {                 // делаем main async чтобы использовать await  
+  print('Fetching user order...');             возвращ тип меняем на Future<void>
+  print(await createOrderMessage());
+}
+
+Output:
+  Fetching user order...
+  Your order is: Large Latte
+
+
+--- Stream ---
+Поток это своего рода коллекция - очередь
+Stream<int>? stream;                    // поток
+stream = stream.asBroadcastStream();    // на такой поток можно подписываться > 1 раза
+StreamSubscription<int>? subscription;  // подписка на поток
+StreamController<int> controller = StreamController<int>(); // управление стримом
+
+
+void main(List<String> args) {
+  print('one');
+  stream = Stream.periodic(Duration(seconds: 1), (tick) => tick); // беск поток
+  print('two');
+  subscription = stream?.listen((event) { // слушаем поток и обрабатываем по своему
+    print(event);
+  });
+  Future.delayed(Duration(seconds: 10), () => subscription?.cancel());  // закончить
+  
+  StreamSubscription<int>? subscription2;
+  subscription2 = controller.stream.listen((event) {  <--------------+
+    print(event);                                                    |
+  });                                                                |
+  controller.add(100);  // добавляются в поток и ловятся слушателем -+
+  controller.add(101);
+  controller.add(102);
+  controller.add(103);
+  print('three');
+  Future.delayed(Duration(seconds: 3), () { // через 3 сек
+    subscription2?.cancel();  // отписаться
+    controller.close();       // закрыть контроллер
+    print('controller closed');
+  });
+}
+
+--- Генератор ------------------------------
+void main(List<String> args) {
+  print(gen());
+  aGen().listen((event) {
+    print(event);
+  });
+}
+
+Iterable<int> gen() sync* {       // синхронный генератор, вернет Iterable
+  for (int i = 0; i < 10; i++) {  // вернет (1,2,3,4,5,6,7,8,9)
+    yield i;
+  }
+}
+
+Stream<int> aGen() async* {       // асинх генератор, возвр поток, на который
+  for (int i = 0; i < 10; i++) {  // можно подписаться
+    yield i;
+  }
+}

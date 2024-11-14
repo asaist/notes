@@ -1,0 +1,1090 @@
+-- Общие понятия
+SQL - Structured Query Language — язык структурированных запросов, с помощью
+него пишутся специальные запросы (SQL инструкции) к базе данных с целью
+получения этих данных из базы и для манипулирования этими данными.
+Гуппы операторов в SQL:
+
+DDL - Data Definition Language – это группа операторов определения данных.
+Другими словами, с помощью операторов, входящих в эту группы, мы определяем
+структуру базы данных и работаем с объектами этой базы, т.е. создаем, изменяем
+и удаляем их. 
+Операторы: CREATE, ALTER, DROP.
+
+DML - Data Manipulation Language – это группа операторов для манипуляции
+данными. С помощью этих операторов мы можем добавлять, изменять, удалять и
+выгружать данные из базы, т.е. манипулировать ими. 
+Операторы: SELECT, INSERT, UPDATE, DELETE.
+
+DCL Data Control Language – группа операторов определения доступа к данным.
+Иными словами, это операторы для управления разрешениями, с помощью них мы
+можем разрешать или запрещать выполнение определенных операций над объектами базы данных.
+Операторы: GRANT, REVOKE, DENY.
+
+TCL Transaction Control Language – группа операторов для управления
+транзакциями. Транзакция – это команда или блок команд (инструкций), которые
+успешно завершаются как единое целое, при этом в базе данных все внесенные
+изменения фиксируются на постоянной основе или отменяются, т.е. все изменения,
+внесенные любой командой, входящей в транзакцию, будут отменены.
+Операторы: BEGIN, COMMIT, ROLLBACK, SAVE TRANSACTION. 
+
+СУБД - сист упр БД (MySQL, PostgreSQL, Microsoft Access...)
+Реляционная база данных — бд, основанная на реляционной модели данных.
+Понятие «реляционный» relation («отношение, зависимость, связь»)
+Схема   - инфо о БД, о структуре и свойствах ее таблиц
+БД      - набор данных хранящихся упорядоченным способом (таблицы)
+Таблица - срук-ый файл с данными определенного типа
+Столбцы - одиночное поле таблицы с опред. типом данных
+Строка  - данные(запись) в таблице счет от НУЛЯ
+Первичные ключи - уникально иден-ют каждую строку
+
+
+=== PostgreSQL =================================================================
+-- Работа в терминале
+sudo -u postgres psql   # start psql as user 'postgres'(авто зареган в Linux) 
+psql --help \? \h       # help for everything
+\q          # exit from psql
+\l          # show databases
+\l dbname   # show db 'dbname'
+\c dbname   # connect(use) database
+\dt         # show all tables in db
+\d table_n  # show table 'table_name'
+\i sqr.sql  # чтение команд из файла
+\timing on	# включить замер времени выполнения команд
+\du			# all users
+
+-- скопировать данные в файл
+\copy (SELECT * FROM persons) to 'C:\tmp\persons_client.csv' with csv
+
+-- Создать бд
+sudo -u postgres createdb mydb   # создать бд из консоли linux
+sudo -u postgres dropdb mydb     # удалить бд 'mydb'
+
+-- Подключиться к БД на удаленном сервере
+psql -h <IP/domen> [-p <port>] -U <username> [-d <db_name>] -W
+    IP/domen - IP-адрес или доменное имя сервера
+    username - имя пользователя
+    port     - необяз порт(по умолчанию 5432)
+    db_name  - необяз имя базы данных
+
+
+-- Типы данных ---------------------------------------------------------
+Существует 3 вида констант:
+строки          - 'hello'
+битовые строки  - B'1001', X'FF'  - записываются в двоичном формате(0,1)
+числа           - 12, .01e-10
+
+-- numeric/числа
+full name 	     | short name    | value
+-----------------+---------------+---------------------
+              --- integers/целые ---
+smallint         | int2          | целое 2 байта
+integer          | int(int4)     | 4 байта по умолчанию 
+bigint           | int8          | 8 байт
+serial           |               | int, автоинкремент
+bigserial        |               | int8, автоинкремент
+      --- floating-point numbers/числа с точкой ---
+float(n)         |               | n-байт, 8 байт максимум
+real             | float8        | 4 байт, 1e-37 - 1e+37
+numeric(p, s)    |               | p - точность(precision) - общ кол-во цифр
+                                 | s - масштаб(scale) - кол-во цифр после точки
+
+-- Приведение типов
+Приведение типов происх автоматич, при присвоении полю таблицы, если все нужный
+тип определяется однозначно.
+
+Явное приведение типов:
+1. int4 '123'               - обобщение стандарта(не все типы могут исп)
+2. '123'::int4              - исторические корни в PostgreSQL
+3. CAST ( '123' AS int4 )   - соответствует SQL
+4. int4 ( '123' )           - исторические корни в PostgreSQL(не все типы)
+
+-- Строковые типы
+full name				| short name |  value
+------------------------+------------+--------------------------------------
+character varying(n)    | varchar(n) | n - max символов
+character(n)            | char(n)    | дополняет знач n пробелами - мало исп
+text                                 | неогран число символов
+
+'string'                - последовательность символов в одинарных ковычках
+E'string\ntoo'          - перенос строки, ставим E для спец символов
+$$Жанна д'Арк$$         - еще один способ, если много ковычек и \
+'one' || ' ' || 'two'   - конкатенация
+concat('12', ' ', '45') - конкатенация
+
+-- замена подстроки
+REPLACE('aaa', 'a', 'b')                        - bbb - замена всех a на b в aaa
+REGEX_REPLACE('aaa', 'a', 'b')                  - baa - замена первого совпадения
+REGEX_REPLACE('aaa', 'a', 'b', 'g')             - bbb - замена всех a на b в aaa
+REGEX_REPLACE(str, E'\\r\\n|\\n|\\r', ' ', 'g') - замена всех переносов строки на пробел
+
+-- Temporal/временные типы -------------------------------------------------
+DATE            # дата
+TIME            # время дня
+TIMESTAMP       # дата + время
+TIMESTAMPTZ     # timestamp + временная зона
+INTERVAL        # период
+
+-- константы и функции
+CURRENT_DATE        # дата сейчас
+CURRENT_TIME        # время с часовым поясом
+CURRENT_TIMESTAMP   # дата+время+ч.пояс сейчас
+NOW()               # тоже самое CURRENT_TIMESTAMP 
+                      совместимость с другими СУБД
+
+-- дата
+SELECT '2016-09-12'::date;      # 2016-09-12
+SELECT 'Sep 12, 2016'::date;    # 2016-09-12
+SELECT CURRENT_DATE;            # дата сейчас
+
+-- формат даты
+используется формат 'yyyy-mm-dd' 1983-01-23
+можно вводить 'Jan 23, 1983' - преобразуется авто
+SELECT to_char( current_date, 'dd-mm-yyyy' );   # 21-09-2016
+
+-- время
+SELECT '21:15'::time;       # 21:15:00
+SELECT '21:15:26'::time;    # 21:15:26
+SELECT '10:15:16 am'::time; # 21:15:26
+SELECT CURRENT_TIME;        # сейчас 23:51:57.293522+03 (+03 часовой пояс)
+-- временная отметка (дата+время+[ч пояс])
+SELECT timestamptz '2016-09-21 22:25:35';   # 2016-09-21 22:25:35+03
+SELECT timestamp '2016-09-21 22:25:35';     # 2016-09-21 22:25:35
+SELECT CURRENT_TIMESTAMP;                   # дата+время+ч.пояс сейчас
+SELECT NOW();                               # тоже самое - совместимость с
+                                              другими СУБД
+-- интервал времени
+SELECT '1 year 2 months'::interval; # 1 years 2 mons, считает кол-во
+                                      если указать ago - '-1 years -2 mons'
+                                      можно исп: microsecond, millisecond,
+                                      second, minute, hour, day, week,
+                                      month, year, decade, century, millennium
+SELECT 'P0001-02-03T04:05:06'::interval;    # альтернативный формат 
+                                              1 year 2 mons 3 days 04:05:06
+SELECT ('2016-09-16'::timestamp - '2016-09-01'::timestamp)::interval;
+-- усечение даты
+SELECT (date_trunc('hour', CURRENT_TIMESTAMP)); # до часа 2016-09-27 22:00:00+03
+-- извлечение отдельных полей времени
+SELECT extract( 'mon' FROM timestamp '1999-11-27 12:34:56.123459' );    # 11
+SELECT EXTRACT(YEAR FROM birthday)		# извлечь год из поля birthday
+SELECT AGE('2017-01-01');	            # возраст от текущей даты в формате (y m d)
+SELECT AGE('2017-01-01','2024-06-24');	# возраст относительно другой даты
+EXTRACT(YEAR FROM AGE(pp.datebirth))    # только количество лет
+
+
+-- Логический тип Boolean
+TRUE    't' 'true'  'yes'   'on'    1   # истина
+FALSE   'f' 'false' 'no'    'off'   0   # ложь
+
+-- Массивы
+my_arr integer[]                            # поле в таблице для массива
+'{1,2,3,4}'::integer[] == ARRAY[1,2,3,4]    # записи аналогичные
+INSERT: '{1,2,3,4}'::integer[]              # добавить данные в т
+UPDATE: my_arr = my_arr || 5;               # добавить в массив 5
+        my_arr = array_append(my_arr, 5);   # аналогично 5 в конец
+        my_arr = array_append(0, my_arr);   # добавить 0 в начало
+        my_arr = array_remove(my_arr, 2);   # удалить эл со знач 2
+        my_arr[0] = 2, my_arr[3] = 57;      # изменить по индексу
+        my_arr[0:2] = ARRAY[9,9];           # изменить по срезу
+SELECT: WHERE array_position(my_arr, 3) IS NOT NULL;    # возвращ индекс позиции
+                                                          значения иначе null
+        WHERE my_arr @> '{4,8}'::integer[]; # возвращ true если в левом массиве
+                                              есть все эл-ты с правого массива
+        WHERE my_arr && ARRAY[2,4];         # пересечение множеств есть ли
+                                              одинак значения, можно исп NOT
+        unnest(my_arr) FROM my_table        # развернуть массив в солбец
+
+-- JSON (JavaScript Object Notation)
+hobbies jsonb                               # хранение в таблице объекта json
+INSERT: '{ "sports": ["football", "golf"],  # вставка объекта
+           "home_lib": true,
+           "trips": 3}'::jsonb
+SELECT: WHERE hobbies @> '{"sports": ["футбол"]}'::jsonb;   # есть такой аттрб?
+        WHERE hobbies->'sports' @> '["футбол"]'::jsonb;     # аналог как выше
+        name, hobbies->'sports' AS sports.. # вывести конкрет ключу объекта
+        сount(*) FROM tbl WHERE hobbies ? 'sports'; # кол-во записей с ключом
+UPDATE: hobbies || '{"sports": ["хоккей"]}' # добавить знач 'хок' в ключ 'spo'
+        hobbies = jsonb_set(hobbies, '{sports, 1}', '"футбол"') # добавить знач,
+                                                                  ключ, №-позиц
+-- UUID
+-- позволяет хранить универсальные уникальные идентификаторы, определенные в RFC 4122
+   могут использоваться для сокрытия конфиденциальных данных, доступных широкой публике, 
+   таких как значения id в URL
+gen_random_uuid ()  -- функция генерирующая UUID
+
+
+-- Операторы --------------------------------------------
++-*/<>=~!@#%^&|`?
+
+-- Специальные знаки
+$   - позиционный параметр в функции, строковые константы
+()  - приоритет, группировка выражений
+[]  - выделение элементов массива
+,   - разделения списка элементов
+;   - завершение команды
+:   - срезы массива
+*   - все поля, аргумент функций
+.   - отделение схемы, таблцы, также в числах
+
+
+-- CREATE TABLE ---------------------------------------------------------------------
+--                           имя_табл
+CREATE TABLE [IF NOT EXISTS] table_name (           -- создать таблицу если не сущ
+-- имя_поля тип_поля(длина) различ_кострэинсы
+   column1 datatype(length) column_contraint,       -- колонки 
+   column2 datatype(length) column_contraint,
+   ...
+   columnN datatype(length) column_contraint,
+   table_constraints                                -- различ_кострэинсы
+);
+
+CREATE TABLE [IF NOT EXISTS] accounts (             -- создать таблицу если не сущ
+	id serial PRIMARY KEY,                          -- id - первичный ключ, автоинкремент
+	username VARCHAR ( 50 ) UNIQUE NOT NULL,        -- уникальное поле не null
+	password VARCHAR ( 50 ) NOT NULL,               -- не null
+	email VARCHAR ( 255 ),                          -- просто поле
+    worker int8 REFERENCES worker(id),              -- FK на поле id в таблице worker
+	created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- автрогенерация даты при INSERT
+    last_login TIMESTAMP                            -- тут можно добавлять из вне
+);                                                     либо с пом функций и триггеров 
+
+-- Constraints/ограничения, DEFAULT/значения по умолчанию
+NOT NULL        - не null
+UNIQUE          - уникальное поле
+PRIMARY KEY     - первичный ключ - уникальный не null
+CHECK           - данные должны удовлетворять условию
+FOREIGN KEY     - внешний ключ
+
+Ограничения можно писать сразу в поле, либо в конце таблицы.
+Можно давать имена ограничениям CONSTRAINT name, либо им дадут авто имена.
+Уникальные поля можно указать в конце в виде кортежа (поле1, поле2).
+Первичный ключ в таблице 1, но может быть составным (из неск полей) он
+    автоматом UNIQUE и NOT NULL.
+
+CREATE TABLE progress
+( 
+    mark numeric(1) DEFAULT 5,      # значение по умолчанию 5 для 'mark'
+    term numeric(1) CHECK (term>0), # ограничение для 'term'(имя огранич авто)
+    book numeric(3) NOT NULL,       # не может быть пустым
+    gimp numeric(5) UNIQUE,         # уникальное знач
+    CONSTRAINT val_book CHECK (book>0), # именованное ограничение для 'book'
+    CONSTRAINT uni_book UNIQUE (book),  # ограничение уникальности
+    PRIMARY KEY (book),             # первич ключ, можно указать и в поле сразу
+
+);
+
+-- PRIMARY KEY
+-- первичный ключ
+-- типы данных подходящие для PK
+SERIAL - генерирует уникальные целочисленные значения автоматически при 
+         каждой новой вставке строки
+INT GENERATED ALWAYS AS IDENTITY - позволяет создавать столбцы с автоматической 
+                                   генерацией значений индентификатора
+-- Если нужны простые автоматически генерируемые значения, которые будут 
+   использоваться только в качестве первичного ключа, то serial
+   Если нужна большая гибкость или использование другого целочисленного типа данных,
+   используй INT GENERATED ALWAYS AS IDENTITY.
+
+-- FOREIGN KEY
+-- поле в таблице, котор ссылается на уникальное поле из др таблицы
+Ссылающаяся таблица --> Ссылочная таблица
+        подченинная --> главная
+можно присваивать имена CONSTRAINT
+CREATE TABLE progress
+( book numeric(5) REFERENCES students (book), # ссылка на поле(book) др табл
+  ...                                           students: book-->students.book
+  FOREIGN KEY (book)   # либо так в конце, показана многострочная команда
+    REFERENCES students (book)  # куда ссылается
+    ON DELETE                   # что делать если то на что ссылались удалено
+        CASCADE                 # каскадное удаление ссылок на эту запись
+        RESTRICT                # при удалении - ошибка, нельзя удалить
+        NO ACTION               # то же, но ждет проверки в рамках транзакции
+                                  (по умолчанию NO ACTION)
+        SET NULL                # устанавливает NULL, поле долж быть не NOT NULL
+        SET DEFAULT             # устан default, он должен быть определен в поле
+    ON UPDATE ...               # изменение значения ключа - те же варианты что
+                                  и при удал - CASCADE чтобы все ссылки обновить
+);
+
+-- SELECT INTO
+-- создает новую таблицу и вставляет данные возвращаемые с запроса
+-- лучше используй CREATE TABLE AS
+SELECT
+    select_list                                                 -- названия полей
+INTO [ TEMPORARY | TEMP | UNLOGGED ] [ TABLE ] new_table_name   -- имя новой таблицы
+FROM
+    table_name                                                  -- данные из запроса
+WHERE
+    search_condition;
+
+-- CREATE TABLE AS
+-- создает новую таблицу и вставляет данные на основе запроса
+CREATE [ TEMPORARY | TEMP | UNLOGGED ] TABLE new_table_name     -- имя таблицы
+AS query;                                                       -- select
+
+-- изменить таблицу ------------------------------------------------------------
+ALTER TABLE students			# ADD, DROP, RENAME, ALTER, ENABLE...
+ADD COLUMN name INT NOT NULL;
+ADD CHECK (score > 100);
+ALTER TABLE prog RENAME TO progress;
+ALTER TABLE progress RENAME COLUMN student TO student_id;
+ALTER COLUMN mark DROP UNIQUE;
+ALTER COLUMN mark ADD CONSTRAINT PRIMARY KEY (id);
+ALTER COLUMN mark DROP CONSTRAINT name_of_constraint;
+ALTER COLUMN mark SET DATA TYPE REAL;
+ADD FOREIGN KEY (student_id) REFERENCES table2 (id);
+ALTER TABLE students ADD UNIQUE(series, number);
+ALTER TABLE progress ALTER COLUMN student TYPE integer USING student::integer;
+ALTER TABLE students ALTER COLUMN mark SET DATA TYPE integer USING 
+( CASE WHEN mark = 'A' THEN 5 WHEN mark = 'B' THEN 3 ELSE 2 END );
+ALTER TABLE contract ADD COLUMN cpp_account int8 REFERENCES cpp_account(id);
+
+-- удалить таблицу -----------------------------------------------------
+DROP TABLE aircrafts;       
+
+
+-- Агрегатные ф-ии -----------------------------------------
+вычисляет единственное значение, обрабатывая множество строк
+COUNT, SUM, AVG, MIN, MAX
+NULL отбрасываются для всех кроме COUNT(*)
+SELECT max(temp_lo) FROM weather;                       # max
+SELECT city, max(temp_lo) FROM weather GROUP BY city;   # группировка
+HAVING max(temp_lo) < 40;   # сортировка после группировки работает
+
+-- вызов агр функций
+1) agr_foo (expr [ , ... ] [ order_by ] ) [ FILTER( WHERE condition ) ]                     // стандартый синтаксис
+2) agr_foo (ALL expr [ , ... ] [ order_by ] ) [ FILTER( WHERE condition ) ]                 // эквивалент 1-го
+3) agr_foo (DISTINCT expr [ , ... ] [ order_by ] ) [ FILTER( WHERE condition ) ]            // для различных значений выражения
+4) agr_foo ( * ) [ FILTER ( WHERE condition ) ]                                             // для каждой строки(только для COUNT(*))
+5) agr_foo ( [ expr [ , ... ] ] ) WITHIN GROUP ( order_by )[ FILTER ( WHERE condition ) ]   // сортирующие агр ф-ии
+agr_foo     - агрегатная функция
+expr        - любое выражение значения, не содержащее в себе агрегатного
+              выражения или вызова оконной функции
+order_by    - некоторые агрегатные функции (такие как array_agg и string_agg)
+              выдают результаты, зависящие от порядка данных.
+              SELECT array_agg(a ORDER BY b DESC) FROM table;
+-- example
+SELECT max(gc.service_cost_discont) FILTER(WHERE gc.takingdate='2023-08-10') FROM guest_card gc;
+              
+
+-- Оконные функции ------------------------------------------------
+SELECT col1, col2, avg(col1) OVER (PARTITION BY col1 ORDER BY col1)
+-- выполняет вычисления для набора строк, связанных с текущ строкой
+-- получают на вход данные после HAVING
+OVER            - обязательный аттрибут оконной функции
+()              - рамка окна - для каждой строки сущ набор строк в ее разделе
+                  По умолчанию с указанием ORDER BY рамка состоит из всех
+                  строк от начала раздела до текущей строки и строк, равных
+                  текущей по значению выражения ORDER BY. Без ORDER BY рамка
+                  по умолчанию состоит из всех строк раздела.
+PARTITION BY fl - группировка значений по полю, идет выборка строк у 
+                  которых значение поля fl равно значению fl текущ строки
+ORDER BY fl     - порядок, в котором строки будут обраб оконными функциями
+                  
+-- средняя цена по по текущему(в строке) депортаменту(PARTITION BY depname)
+SELECT depname, salary, avg(salary) OVER (PARTITION BY depname)
+-- () - все строки таблицы
+SELECT depname, salary, avg(salary) OVER ()
+-- ранг по каждому департаменту начиная с большей зарплаты
+SELECT depname, salary, rank() OVER (PARTITION BY depname ORDER BY salary DESC)
+-- пример сортировки по оконной ф-ии
+SELECT 
+    DISTINCT gc.filial, 
+    max(gc.service_cost_discont) OVER(PARTITION BY filial) AS "max"
+FROM 
+    guest_card gc 
+WHERE 
+    gc.takingdate='2023-08-10' 
+ORDER BY 
+    "max" DESC;
+
+-- вызов ф-ий
+foo ([expr [, expr ... ]]) [ FILTER ( WHERE condition ) ] OVER win_name
+foo ([expr [, expr ... ]]) [ FILTER ( WHERE condition ) ] OVER ( win_declare )
+foo ( * ) [ FILTER ( WHERE condition ) ] OVER win_name
+foo ( * ) [ FILTER ( WHERE condition ) ] OVER ( win_declare )
+    foo         - имя_функции
+    expr        - выражение, любое выражение кроме оконных ф-ий
+    win_name    - имя_окна
+    win_declare - определение_окна
+    condition   - предложение_фильтра
+win_declare:
+    [ имя_существующего_окна ]
+    [ PARTITION BY выражение [, ...] ]
+    [ ORDER BY выражение [ ASC | DESC | USING оператор ] [ NULLS { FIRST | LAST } ][, ...] ]
+    [ определение_рамки ]
+    определение_рамки(необязательное):
+        { RANGE | ROWS | GROUPS } начало_рамки [ исключение_рамки ]
+        { RANGE | ROWS | GROUPS } BETWEEN начало_рамки AND конец_рамки [ исключение_рамки ]
+        начало_рамки и конец_рамки:
+            UNBOUNDED PRECEDING
+            смещение PRECEDING
+            CURRENT ROW
+            смещение FOLLOWING
+            UNBOUNDED FOLLOWING
+        исключение_рамки:
+            EXCLUDE CURRENT ROW
+            EXCLUDE GROUP
+            EXCLUDE TIES
+            EXCLUDE NO OTHERS
+
+
+-- Транзакции ---------------------------------------------------------------
+-- Последовательность действий в одной операции - либо все вып-ся либо ничего
+
+-- пример перевода денежных средств с одного счета на дргой
+BEGIN;		# также BEGIN TRANSACTION или BEGIN WORK - начать транзакцию <--+
+-- какие-то операции которые должны вып-ся все или не выполниться           |
+UPDATE accounts SET balance = balance - 100.00 WHERE name = 'Alice';		|
+UPDATE accounts SET balance = balance + 100.00 WHERE name = 'Bob';          |
+SELECT id, name, balance FROM accounts;                                     |
+-- транзакция заканчивается либо COMMIT, либо ROLLBACK                      |
+COMMIT;		# подтвердить изменения     									|
+ROLLBACK;	# отменить изменения, вернуть все как до начала транзакции -----+
+-- ROLLBACK также можно писать как ROLLBACK WORK или ROLLBACK TRANSACTION
+
+ACID:
+    Atomicity   — Атомарность(транзакция вып-ся полностью или совсем нет)
+    Consistency — Согласованность(Транзакция, достигающая своего нормального
+                  завершения (EOT — end of transaction, завершение транзакции) и,
+                  тем самым, фиксирующая свои результаты, сохраняет согласованность
+                  базы данных. Выполняется на стороне разрабов, проверяется все
+                  ли данные правильные и корректные, если что откат)
+    Isolation   — Изолированность(Во время выполнения транзакции параллельные 
+                  транзакции не должны оказывать влияния на её результат.)
+                  Эффекты при параллельных транзакциях:
+                    - Потерянная запись: один поток записал в ячейку и еще не
+                      заккомитил, а второй также записал туда что-то, кто последний
+                      запишет - так и сохраниться
+                    - Грязное чтение: чтение потоком ячейки, которую другой поток
+                      изменил и еще не заккомитил
+                    - Повторимое чтение: один поток выполняет запрос и Получает
+                      данные, второй в это время меняет данные, а первый Получает
+                      часть данных до изменения и часть после - разные данные в итоге
+                    - Фантомы: тоже что и в предыдущем, только второй поток не
+                      меняет данные, а добавляет или удаляет
+                  Как бороться - использовать блокировки и версии:
+                    - блокировки(lock): отметка о захвате объекта транзакцией в 
+                      ограниченный или исключительный доступ с целью предотвращения
+                      коллизий и поддержания целостности данных
+                      Классификации блокировок:
+                      По области действия:
+                        - Строчная блокировка(на строку таблицы, другие не блокируются)
+                        - Гранулярная блокировка(блокировка всей таблицы)
+                        - Предикатная блокировка(блокировка по диапазону ключей)
+                      По строгости:
+                        - Совместная блокировка(используется для операций чтения - потокобезопасна)
+                        - Исключительная блокировка(запись, только для 1 транзакции(потока))
+                          не может быть наложена на объект с совместной блокировкой
+                      По логике реализации:
+                        - Пессимистическая блокировка(недоступна модификация данных из других сессий,
+                          данные доступно согласно уровню изол транзакций, по завершению гарантирована
+                          непротиворечивая запись результатов)
+                        - Оптимистическая блокировка - не огранич модиф данных сторонними сессиями, при
+                          изменении данных запрашивается версия, если она не изменяется при завершении -
+                          то коммит, если версия сменилась значит другой поток уже поменял данные - откат
+                    - версии: внутри базы при каждом обновлении создается новая версия
+                      данных и сохраняется старая, пока транзакция, обновляющая запись,
+                      не покомитит свое изменение, остальные потребители читают старую
+                      версию записи и не блокируются
+    Durability  — Надёжность(Если пользователь получил подтверждение от системы, что 
+                  транзакция выполнена, он может быть уверен, что сделанные им изменения
+                  не будут отменены из-за какого-либо сбоя)
+
+Уровни транзакций:
+BEGIN TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;		# 
+BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;		# default, пока нет 
+														  коммита - изменений
+														  никто не видит
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;		# 
+BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;			# 
+
+1. Read Uncommitted
+    Это самый низкий уровень изоляции. Согласно стандарту SQL 
+    на этом уровне допускается чтение «грязных» (незафиксированных) данных. Однако 
+    в PostgreSQL требования, предъявляемые к этому уровню, более строгие, чем в
+    стандарте: чтение «грязных» данных на этом уровне не допускается.
+2. Read Committed
+    Не допускается чтение «грязных» (незафиксированных) данных. 
+    Таким образом, в PostgreSQL уровень Read Uncommitted совпадает с уровнем Read 
+    Committed. Транзакция может видеть только те незафиксированные изменения 
+    данных, которые произведены в ходе выполнения ее самой.
+3. Repeatable Read
+    Не допускается чтение «грязных» (незафиксированных) данных 
+    и неповторяющееся чтение. В PostgreSQL на этом уровне не допускается также 
+    фантомное чтение. Таким образом, реализация этого уровня является более 
+    строгой, чем того требует стандарт SQL. Это не противоречит стандарту.
+4. Serializable
+    Не допускается ни один из феноменов, перечисленных выше, 
+    в том числе и аномалии сериализации.
+
+
+-- CASE expression(if-else) -----------------
+CASE 
+      WHEN condition_1  THEN result_1
+      WHEN condition_2  THEN result_2
+      [WHEN ...]
+      [ELSE else_result]
+END
+SELECT name, score, 
+	CASE 
+		WHEN score BETWEEN 50 AND 80 THEN 'B'
+		WHEN score > 80 THEN 'A' ELSE 'F'
+	END AS grade 
+FROM students;
+
+
+-- Процедуры ------------------------------------------------------------------
+Процедура — объект базы данных, подобный функции, но имеющий следующие отличия:
+- не возвращают значение, могут выдавать данные в вызывающий код
+- вызываются отдельно командой CALL
+- может фиксировать или откатывать транзакции во время её выполнения
+
+тело процедуры/функции может быть заключено в '...' либо в $$...$$
+
+-- Syntax
+-- procedure                            -- function
+CREATE PROCEDURE clean_emp() AS '       CREATE FUNCTION clean_emp() RETURNS void AS '
+    DELETE FROM emp                         DELETE FROM emp
+    WHERE salary < 0;                       WHERE salary < 0;
+' LANGUAGE SQL;                         ' LANGUAGE SQL;
+
+-- вызов                                -- вызов
+CALL clean_emp();                       SELECT clean_emp();
+
+-- Функции ---------------------------------------------------------------------------
+-- создать ф-ию имя_ф-ии              параметры...    параметр зо знач по умолчанию
+CREATE FUNCTION concat_lower_or_upper(a text, b text, uppercase boolean DEFAULT false)
+RETURNS text                                    -- возвращаемый тип
+AS                                              -- тело ф-ии
+$$                                              -- начало блока (' или $$)
+    SELECT CASE                                 -- select
+        WHEN $3 THEN UPPER($1 || ' ' || $2)     -- $1, $2, $3 - позиционные параметры
+        ELSE LOWER($1 || ' ' || $2)
+        END;
+$$                                              -- rjytw блока (' или $$)
+LANGUAGE SQL IMMUTABLE STRICT;                  -- доп параметры
+
+Если есть параметр по умолчанию - то он необязательный
+SELECT concat_lower_or_upper('Hello', 'World', true);       -- вызов ф-ии со всеми пар-ми
+SELECT concat_lower_or_upper('Hello', 'World');             -- с обязательными пар-ми
+SELECT concat_lower_or_upper(b => 'World', a => 'Hello');   -- именованные параметры
+SELECT concat_lower_or_upper(a := 'Hello', b := 'World');   -- старый синтаксис
+SELECT concat_lower_or_upper(a, b => 'World');              -- смешанный
+
+
+-- Регулярные выражения SIMILAR TO -------------
+строка SIMILAR TO шаблон [ESCAPE спецсимвол]
+строка NOT SIMILAR TO шаблон [ESCAPE спецсимвол]
+
+================================================================================
+
+--- SQL ------------------------------------------------------------------------
+SQL программа   - последовательность команд
+                  SELECT f1, f2 FROM my_table;
+команда         - последовательность компонентов, заканчивающихся ';', либо 
+                  конец входного потока(конец кода)
+компонент       - ключевое слово, идентификатор, идентификатор в кавычках,
+                  строка (или константа) или специальный символ.
+                  Компоненты разделяются пробельными символами (пробел,t\,\n),
+                  могут не разделяться (например, когда спецсимвол оказывается 
+                  рядом с компонентом другого типа SELECT*,avg(f) OVER()FROM)
+ключевое слово  - SELECT - слова имеющие фиксированное езначение, учитывается
+                  без регистра => SeLeCt select Select SELECT
+                  принято большими
+идентификатор   - (имя), my_table, f1 - имена значений базы данных(таблица...),
+                  учитыв без регистра My_Table my_table MY_TABLE
+                  принято маленькими
+идентификаторы  - набор символов в двойных кавычках - "select", регистр учитыв,
+в кавычках        может содержать любые символы, кроме символа с кодом 0
+                  SELECT "f1", f2 FROM "my_table";
+
+-- комментарий
+#  comment to
+/* comment
+   to
+*/
+
+-- экранирование
+`` -такими ковычками можно заэкранировать спец слова и символы
+\  -стандартный символ экранирования
+
+
+-- CRUD ----------------------------------------------------------------------
+
+-- INSERT INTO ---------------------------------------------------------------
+-- Добавление данных
+# INSERT synopsis
+INSERT INTO table_name      # название таблицы
+    (column1, column2…)     # в какие колонки внести, если во все - пропустить
+VALUES
+    (val1, val2...),        # значения, соответссвующие столбцам
+    (val3, val4...),        # можно вносить неск записей(списки одинак размера)
+    ...
+    (valn, valm…)
+RETURNING *;                # необяз, заменяет возврат по умолчанию на наш вывод
+                              вместо INSERT 0 3 -> будут допустим * все строки
+-- добавить из др таблицы можно использовать WHERE, GROUP BY, ORDER BY
+INSERT INTO book (title, author, price, amount) 
+SELECT title, author, price, amount FROM supply
+WHERE author NOT IN ( SELECT author FROM book );	-- также можно исп влож запр
+-- добавить из файла
+INSERT INTO aircrafts  
+  COPY aircrafts FROM '/home/user/air.txt';         -- внести из текстового файла
+
+-- SELECT -------------------------------------------------------
+-- Извлечение данных
+# SELECT synopsis
+SELECT column1, column2…    # извлечь одно, неск или * - все поля
+FROM table                  # имя таблицы
+WHERE condition1 AND ...    # где 1 или несколько условий
+ORDER BY column1 ... mn2…   # сортировка 
+LIMIT n                     # лимит вывода
+OFFSET m;                   # отступ
+
+-- UPDATE -------------------------------------------------------
+-- Изменение данных
+# UPDATE synopsis
+UPDATE table_name           # название таблицы
+SET column1 = 'my var',     # установить новые значения в определенные колонки
+    column2 = 1080,
+    ...
+    columnN = 'end'
+WHERE column_name = '...'   # условие, при котором необходимо изменить запись
+RETURNING column1;          # свой показ вывода при update, вместо UPDATE 1
+
+-- В запросах на обновление можно использовать несколько таблиц
+UPDATE book, supply 		# к полям обращаться через точку
+SET book.amount = book.amount + supply.amount
+WHERE book.title = supply.title AND book.author = supply.author;
+
+-- Join в UPDATE
+-- Для каждой строки таблицы t1 оператор UPDATE проверяет каждую строку таблицы t2. 
+   Если значение в столбце c2 таблицы t1 равно значению в столбце c2 таблицы t2, 
+   инструкция UPDATE обновляет знач в столбце c1 таблицы t1 новым знач (new_value)
+UPDATE t1
+SET t1.c1 = new_value
+FROM t2                     -- используем для JOIN оператор FROM
+WHERE t1.c2 = t2.c2;        -- поле для слияния таблиц
+
+-- подзапрос
+UPDATE table1
+SET column1 = subquery.column2
+FROM (
+  SELECT column1, column2   -- тот же JOIN только подзапрос
+  FROM table2
+  WHERE condition
+) AS subquery
+WHERE table1.id = subquery.column1;
+
+-- DELETE --------------------------------------------------------------------
+-- Удаление данных
+DELETE FROM my_table        # table
+WHERE field1 = 'hui'        # удаляет данные при условии(без условия - delall)
+RETURNING *;                # необяз замена стандартного вывода - DELETE 1
+
+WHERE title IN (			# условие - вложенный запрос
+        SELECT title 
+        FROM book
+      );
+
+-- удаляет все и сбрасывает счетчик
+TRUNCATE TABLE my_table RESTART IDENTITY;
+
+-- Подзапрос
+DELETE FROM contacts
+WHERE phone IN (SELECT phone FROM blacklist);
+
+-- Join в DELETE
+-- удалит записи из t1 если они есть в t2
+DELETE FROM t1
+USING t2                    -- используем для JOIN оператор USING
+WHERE t1.id = t2.id         -- поле для слияния таблиц
+
+
+-- Работа с файлами CSV ----------------------------------------------------
+-- из .csv в таблицу
+COPY persons(first_name, last_name) -- в таблицу persons(поля необяз)
+FROM 'C:\sampledb\persons.csv'      -- сам файл
+DELIMITER ','                       -- csv разделитель
+CSV HEADER;                         -- игнорить заголовок в файле
+
+-- из таблицы в .csv
+COPY persons TO                     -- из таблицы в файл
+'C:\tmp\persons_db.csv'             -- сам файл
+DELIMITER ','                       -- csv разделитель
+CSV HEADER;                         -- включить названия колонок в заголовок
+
+
+-- AS ----------------------------------------------------------------------
+-- Alias/псевдонимы
+SELECT column1 AS col FROM table;           # alias/псевдоним поля
+SELECT column1 col FROM table;              # то же самое, AS можно опустить
+SELECT f.id FROM finance AS f;              # alias/псевдоним таблицы
+SELECT f.id FROM finance f;                 # то же самое, AS можно опустить
+SELECT f.id AS number FROM finance f;       # любые миксы
+SELECT id AS "my id" FROM table;            # экранируем двойными ковычками
+
+-- WHERE ---------------------------------------------------------------------
+-- фильтрация, используется в SELECT/UPDATE/DELETE
+-- опрераторы в WHERE:  
+    =  >  <  >=  <=  !=(<>) BETWEEN AND OR IN NOT LIKE IS NULL
+-- BETWEEN это диапазон [min, max] min <= value <= max
+    WHERE price (NOT)BETWEEN 5 AND 10; # 5 <= price <= 10
+-- операторы OR AND NOT IN
+    WHERE prod_price <= 10 AND prod_name != 'HER'; составная фильтрация
+    WHERE (prod_name = 'Milk' OR prod_name = 'Vodka') AND prod_price <= 10; 
+    WHERE prod_name IN(NOT IN) ('milk', 'vodka'); вхождение(не вхождение)
+-- IS
+    WHERE phone IS NULL         # проверка на null
+    WHERE phone IS NOT NULL     # проверка на не null
+
+-- LIKE ------------------------------------------------------------------
+-- Используется с WHERE
+-- опрератор для исп-я метасимволов для поиска текста в текстовых полях
+    LIKE        # равен
+    NOT LIKE    # не равен
+    ILIKE       # равен игнор регистра
+    NOT ILIKE   # не равен игнор регистра
+-- Wildcards запросы
+    %       # 0 или более любых символов, не обязательный
+    _       # любой 1 символ, обязательный
+    [AB]    # 1 любой символ из []
+    [^CD]   # 1 любой символ, кроме тех что в []
+-- Операторы вместо LIKE
+    Operator	Equivalent
+    ~~	        LIKE
+    ~~*	        ILIKE
+    !~~	        NOT LIKE
+    !~~*	    NOT ILIKE
+-- example
+    SELECT row where name ILIKE 'hulio%'
+
+-- ORDDER BY ---------------------------------------------------------------
+# сортировка по колонкам (прямая или обратная) 
+ORDER BY col1 [ASC | DESC] [NULL FIRST | NULL LAST] [, col2...]
+ORDER BY 1;                         # по номеру столбца
+ASC                                 # по возрастанию(по умолчанию)
+DESC                                # по убыванию(сначала большие знач) 
+NULLS FIRST                         # нулевые значения столбца сначала
+NULLS LAST                          # нулевые значения столбца вконце
+
+-- OFFSET ------------------------------------------------------------------
+-- Отступ  (исп-ся с SELECT)
+ OFFSET 1;  # вывод записей после 1 записи
+
+-- GROUP BY - группирует по значениям в колонке(ах) и применяет ф-ию ---------
+-- Агрегатные ф-ии считают общие значения для каждой группы выбранного столбца
+-- Все поля в SELECT без агр ф-ий должны быть указаны в GROUP BY
+SELECT  size, COUNT(*)      # могут быть как только агр функции, так и поля,
+FROM table                    также поля+агр.функции
+WHERE country = 'Russia'    # фильтр еще не сгруппированных данных
+GROUP BY size               # поля по которым идет группировка
+HAVING COUNT(*) > 10;       # доп фильтрация после группировки
+ORDER BY COUNT(*) DESC
+LIMIT 5
+
+-- LIMIT --------------------------------------------------------
+-- Лимит вывода (исп-ся с SELECT)
+LIMIT 5;                    # первые 5 записей таблицы
+
+-- FETCH --------------------------------------------------------
+-- Использовать вместо LIMIT, подходит под стандарт SQL
+FETCH FIRST 5 ROW ONLY;     # первые 5 записей таблицы
+
+
+-- DISTINCT -----------------------------------------------------
+-- Уникальные значения столбца
+SELECT DISTINCT author      # размещается сразу после SELECT
+FROM book;                    затем нужный столбец
+SELECT author               # аналогичный эффект, только 
+FROM book                     уникальные значения столбца
+GROUP BY author;
+SELECT DISTINCT name, age   # уникальные сочитания двух+ полей
+                              Иван|31 Иван|40 - связка 2-х полей
+-- DISTINCT ON
+-- выбор уникальных строк на основе указ столбца или столбцов
+SELECT DISTINCT ON (department) department, salary
+FROM employees
+ORDER BY department, salary DESC;   # department обязателен
+-- будет выбрана только одна запись для каждого уникального 
+   отдела - запись с наибольшей зарплатой
+
+
+-- JOIN ---------------------------------------------------------
+-- получение данных из двух+ таблиц
+# JOIN synopsis
+SELECT table1.column1, table1.column2…
+FROM table1
+_____ JOIN table2       	# пробел - (INNER, LEFT, RIGHT...)
+ON table.column_x = table2.column_x 	# по этой колонке ищем совпадение
+WHERE conditions
+ORDER BY column1;
+полное назв     сокращ          действие
+-------------------------------------------------------------
+INNER           (просто JOIN)   только строки где есть совпадение
+LEFT OUTER      LEFT            все строки с левой таблицы и те что совпали с правой
+RIGHT OUTER     RIGHT           все строки с правой и те что совпали в левой
+FULL OUTER      FULL            все строки с совпадением и без
+CROSS           CROSS           
+NATURAL         NATURAL
+
+SELECT *            -- все поля из всех связанных таблиц
+SELECT table1.*     -- все поля из определенной таблицы
+SELECT table2.*     -- все поля из определенной таблицы
+
+
+-- USING
+-- неявная связь двух таблиц имеющих одинаковое поле
+JOIN departments USING (department_id); # обе таблицы имеют поле department_id
+
+
+-- UNION -------------------------------------------------------
+-- комбинирует резалт сеты 2-х и более селектов в 1 резулт сет
+-- удаляет все повторяющиеся строки из объединенного набора данных. 
+-- Чтобы сохранить повторяющиеся строки, вместо этого использовать UNION ALL
+правила изпользования:
+    - Количество и порядок столбцов в списке выбора запросов должны быть одинаковыми
+    - Типы данных должны быть совместимы
+SELECT * FROM top_rated_films
+UNION
+SELECT * FROM most_popular_films;
+
+-- INTERSECT ---------------------------------------------------
+-- комбинирует резалт сеты 2-х и более селектов в 1 резулт сет
+-- только строки которые есть во всех запросах
+правила изпользования:
+    - Количество и порядок столбцов в списке выбора запросов должны быть одинаковыми
+    - Типы данных должны быть совместимы
+SELECT * FROM most_popular_films 
+INTERSECT
+SELECT * FROM top_rated_films;
+
+-- EXCEPT ------------------------------------------------------
+-- комбинирует резалт сеты 2-х и более селектов в 1 резулт сет
+-- только строки которые есть в одном и нет в других
+правила изпользования:
+    - Количество и порядок столбцов в списке выбора запросов должны быть одинаковыми
+    - Типы данных должны быть совместимы
+SELECT * FROM top_rated_films
+EXCEPT 
+SELECT * FROM most_popular_films;
+
+
+-- Подзапросы --------------------------------------------------------------
+-- Вложенный запрос исп для выборки данных, которые будут исп в условии 
+   отбора записей основного запроса.
+-- Применяют для:
+   сравнения выражения с результатом вложенного запроса;
+   определения того, включено ли выражение в результаты вложенного запроса;
+   проверки того, выбирает ли запрос определенные строки.
+-- Компоненты вложенного запроса
+   SELECT FROM [WHERE GROUP BY HAVING]
+-- Влож запросы  могут включаться в WHERE или HAVING, также после SELECT
+-- Примеры использования
+   WHERE | HAVING выражение оператор_сравнения (вложенный запрос);
+   WHERE | HAVING выражение, включающее вложенный запрос;
+   WHERE | HAVING выражение [NOT] IN (вложенный запрос);
+   WHERE | HAVING выражение  оператор_сравнения  ANY | ALL (вложенный запрос)
+-- Операторы ANY и ALL
+   Операторы ANY и ALL используются  в SQL для сравнения некоторого значения
+   с результирующим набором вложенного запроса, состоящим из одного столбца.
+   Можно использовать только с вложенными запросами.
+
+-- ANY 
+-- используется для сравнения значения с любым из элементов в заданном списке
+-- Используется с операторами = <= > < > <>
+SELECT *
+FROM table_name
+WHERE column_name = ANY(ARRAY['value1', 'value2', 'value3']);
+
+SELECT *
+FROM table_name
+WHERE column_name = ANY(
+SELECT column_name
+FROM another_table
+WHERE condition
+);
+
+-- ALL 
+-- используется для сравнения значения с каждым элементом из списка значений
+   и возвращает true, если все значения соответствуют условию
+-- Используется с операторами = <= > < > <>
+SELECT *
+FROM employees
+WHERE salary > ALL (1000, 2000, 3000);
+
+-- Examples
+   amount > ANY (10, 12) эквивалентно amount > 10
+   amount < ANY (10, 12) эквивалентно amount < 12
+   amount > ALL (10, 12) эквивалентно amount > 12
+   amount < ALL (10, 12) эквивалентно amount < 10
+  
+	SELECT id, name, price  # SELECT UPDATE DELETE INSERT
+	FROM products
+	WHERE price = (SELECT MAX(price) FROM products) # подзапрос возвр рез-т 1-ым
+		  id IN (SELECT product_id FROM sales)
+	SELECT title, author, amount, price
+	FROM book
+	WHERE amount < ALL (
+			SELECT AVG(amount) 
+			FROM book 
+			GROUP BY author);
+
+-- (NOT)EXISTS ------------------------------------------------------
+-- возвращает TRUE или FALSE с подзапроса
+-- похож на использование INNER JOIN
+-- если строк > 0 - возвращает TRUE, иначе FALSE
+-- все строки из таблицы1, для которых существует соответствующая строка в таблице2 
+   по совпадающему значению в столбце "id". Оператор EXISTS возвращает TRUE, 
+   если подзапрос возвращает одну или более строк
+SELECT *
+FROM таблица1 AS t1
+WHERE EXISTS (
+SELECT 1
+FROM таблица2 AS t2
+WHERE t1.id = t2.id);
+
+
+-- CTE(common table expressions)----------------------------------------
+-- CTE позволяют создавать временные таблицы и использовать их для выполнения 
+   сложных запросов и манипуляций с данными
+WITH temp_table AS (    -- создать временную таблицу
+    SELECT *
+    FROM some_table
+    WHERE some_column = 'some_value'
+)
+SELECT *
+FROM temp_table         -- использование
+
+-- несколько запросов
+WITH cte1 AS (
+    SELECT id, name
+    FROM table1
+    WHERE condition1
+),
+cte2 AS (
+    SELECT id, name
+    FROM table2
+    WHERE condition2
+)
+SELECT *
+FROM cte1
+JOIN cte2 USING (id)
+
+-- CTE для выполнения рекурсивного запроса
+WITH RECURSIVE recursive_cte (id, name, manager_id) AS (
+    SELECT id, name, manager_id
+    FROM employees
+    WHERE id = 1
+    UNION ALL
+    SELECT e.id, e.name, e.manager_id
+    FROM employees e
+    INNER JOIN recursive_cte rc ON rc.id = e.manager_id
+)
+SELECT *
+FROM recursive_cte
+    
+
+-- Индексы ------------------------------------------------------------- 
+-- структура данных в базе для быстрого поиска
+-- СУБД автоматически решает использовать их или нет
+CREATE INDEX name_ind ON table (field); # create index
+DROP INDEX name_ind;                    # drop index
+
+
+-- VIEW - представления-------------------------------------------------
+-- можно создавать из смешанных таблиц(для удобства)
+-- ограничивать данные(некоторые столбцы не показывать)
+-- сокрытие реализации
+CREATE VIEW myview AS           # создать 
+    SELECT name, temp_lo, temp_hi, prcp, date, location
+        FROM weather, cities
+        WHERE city = name;
+SELECT * FROM myview;           # использование
+
+CREATE MATERIALIZED VIEW 	    # тоже представление, но еще и результат хранит
+REFRESH MATERIALIZED VIEW view	# обновить
+
+
+-- Вычисляемые столбцы -------------------------------------------------
+-- создание своих столбцов: выражение(некие операции, арифметич или 
+   конкатенация, или исп функ-й) + псевдоним
+-- вычисляютя для каждой строки
+SELECT price*amount AS total...
+-- конкатенация
+SELECT CONCAT(field1, ' ', 'sometext'), field2.. FROM mytable;
+-- арифметич операции + - * / %
+SELECT field1 * 2 AS doubled_num FROM...
+-- функции
+SELECT ROUND(field1, 2) AS rounded_num FROM..
+
+
+-- Логический порядок операций ---------------------------------------------
+FROM, включая JOINs -- определить весь рабочий набор данных для запроса
+WHERE               -- фильтр данных в соответствии с условиями
+GROUP BY            -- объед данных в соотв с одним или неск столбцами
+HAVING              -- фильтр сгруппированных данных
+Функции WINDOW      -- оконные ф-ии
+SELECT              -- выборка данных
+DISTINCT            -- отбрасывание повторяющихся значений
+UNION               -- объединяет наборы результатов двух запросов в один
+ORDER BY            -- сортировка результатов
+OFFSET              -- отступ
+FETCH               -- кол-во строк
+
+-- PostgreSQL server ------------------------------------------------------
+1	sudo nano /etc/postgresql/12/main/postgresql.conf
+	#listen_addresses = 'localhost'
+	заменить на
+	listen_addresses = '*'
+2	sudo nano /etc/postgresql/12/main/pg_hba.conf
+	допишем в конец файла
+	host      mydb       myuser  all          md5
+3	Рестарт сервера
+	sudo service postgresql restart
+
+-- Add user to PostgreSQL -------------------------------------------------
+CREATE ROLE python WITH PASSWORD 's8Jg5HYc';
+ALTER ROLE python SET client_encoding TO 'utf8';
+ALTER ROLE python SET default_transaction_isolation TO 'read committed';
+ALTER ROLE python SET timezone TO 'UTC';
+-- GRANT ALL PRIVILEGES ON DATABASE "Vega" TO python;  -- все права на базу
+-- разрешить только CRUD операции на определенную таблицу
+GRANT CONNECT ON DATABASE "Vega" TO python;
+GRANT USAGE ON SCHEMA public TO python;
+GRANT SELECT, INSERT, UPDATE, DELETE, REFERENCES ON TABLE public.my_table TO python;
+GRANT SELECT, USAGE ON SEQUENCE public.my_table_id_seq TO python;
+
+-- Tips/Triks ----------------------
+-- группировка по дням недели
+select 
+	date_trunc('week', gc.takingdate) as week,
+	count(*) as "all"
+group by 
+	date_trunc('week', gc.takingdate)
+
+-- вставка записей в таблицу итерируясь по массиву
+DO
+$do$
+declare x integer;
+BEGIN
+    FOREACH x IN array(
+        SELECT
+            array_agg(id::integer)
+        FROM table
+        WHERE
+            name = 'Vasya')
+    LOOP
+        INSERT INTO table_2
+            (field1,field2,field3)
+        VALUES
+            (1, 'hello',
+            (SELECT hui FROM table WHERE id = x));
+    END LOOP;
+END
+$do$;
+
+-- обрезать длинные строки ---
+SELECT SUBSTRING(column_name FROM 1 FOR 20) AS truncated_text
+FROM 1 - отсчёт первого символа начинается с 1, с какого символа
+FOR 20 - макс количество выводимых символов начиная с FROM

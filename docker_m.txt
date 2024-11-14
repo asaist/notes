@@ -1,0 +1,337 @@
+Docker
+
+Docker - средство упаковки, доставки и запуска приложений
+
+Install
+  https://docs.docker.com/engine/install/ubuntu/
+  
+  # uninstall all conflicting packages
+  for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+  
+  # Add Docker's official GPG key:
+  sudo apt-get update
+  sudo apt-get install ca-certificates curl
+  sudo install -m 0755 -d /etc/apt/keyrings
+  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+  # Add the repository to Apt sources:
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  sudo apt-get update
+
+  # install
+  sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+Docker Image
+    Это шаблон для создания контейнера
+    Обеспечивает конфигурацию контейнера, ОС, зависимости, всякие данные
+    это упакованная сборка приложения, готовая к запуску 
+    это такая многослойная система из раздичных слоев(Ubuntu+Python+..)
+    Изменить образ нельзя - только создать новый
+    Предназначен для распространения и хранения
+
+Docker Container 
+    это работающее приложение созданное на базе Image,
+    можно создавать множество контейнеров на одной и той же базе.
+    Контейнер работает до остановки приложения.
+    Запускаумый инстанс образа. Можно запускать/останавл/удалять/перемещать
+    Можно запускать на локальной машине, виртуальной, облаке
+    Может быть запущен на любой ОС
+    Изолирован от других контейнеров, имеет свою структуру
+    Предназначен для выполнения приложений
+
+Dockerfile - инструкции для создания Image
+    Обычно пример как заполнять этот файл есть в документации конкретного продукта
+    example:
+    FROM openjdk:11                     # базовый образ
+    ENV CATALINA_HOME /usr/local/tomcat # переменные окружения
+    ENV PATH $CATALINA_HOME/bin:$PATH
+    WORKDIR /usr/local/                 # установить рабочий каталог
+    RUN wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.75/bin/apache-tomcat-9.0.75.tar.gz && \
+        tar -xf apache-tomcat-9.0.75.tar.gz && \
+        mv apache-tomcat-9.0.75 ${CATALINA_HOME}
+    COPY target/medserver.war  ${CATALINA_HOME}/webapps/    # копирование
+    EXPOSE 8080                         # открыть порт
+    CMD ["catalina.sh", "run"]          # выполнить команду при запуске контейнера
+    
+    # переменные окружения
+        ENW TZ Europe/Samara        # либо указываем в dockerfile
+        -e TZ Europe/Samara         # либо при запуске контейнера в параметрах
+    
+    Подробно:
+    --------------------------------------------------------------------------------------------
+    FROM image:tag                      # базовый образ на основе которого будет строиться новый
+                                          образ, если не указывать - по умолчанию идёт тэг latest
+    
+    RUN apt update && apt upgrade       # выполняет команды в образе во время сборки, используется
+                                          для установки пакетов, настройки окружения, и др
+    
+    COPY . /app                         # икопирует файлы или директории из хост-системы в образ
+                                          ./  .  / -текущая директория COPY . . все из корня в корень
+
+    ADD ./archive.tar.gz /app           # похож на COPY, но с некоторыми дополнительными возможностями, 
+                                          например, для распаковки архивов, рек-ся использовать COPY
+    
+    CMD ["nginx", "-g", "daemon off;"]  # команда, которая будет выполняться при запуске контейнера
+                                          Каждому Dockerfile может быть только одна команда CMD
+                                          лучше использовать для задания параметров по умолчанию, 
+                                          которые могут быть изменены. CMD можно переопределить, 
+                                          указав аргументы командной строки для docker run
+    
+    ENTRYPOINT ["python", "app.py"]     # команда, которую нужно выполнять, когда контейнер запускается,
+                                          использовать для установки фиксированной базовой команды, 
+                                          к которой можно добавлять аргументы, то есть при запуске
+                                          можно добавить арг, но не переопределить имеющийся
+
+    ENV CATALINA_HOME /usr/local/tomcat # переменные окружения
+    ENV PATH $CATALINA_HOME/bin:$PATH
+    ENV PORT=8080
+
+    EXPOSE 8080                         # открыть порт
+
+    VOLUME ["/data"]                    # создать точку монтирования для сохранения данных
+                                          Это позволяет сохранять и делиться данными между контейнерами
+
+    WORKDIR /app                        # установить рабочую директорию для последующих команд 
+                                          (RUN, CMD, ENTRYPOINT, COPY, ADD)
+
+
+Порядок развертывания приложения в контейнере:
+    1. Создаем Dockerfile в корне проекта, заполняем его(мануал отдельно)
+    2. Билдим образ на основе Dockerfile -> docker build -t imName path
+    3. Запускаем контейнер на базе образа -> docker run --rm -dp 3000:3000 imName
+    4. Если нужно перезалить - смотрим запущенные контейнеры, копируем contId
+    5. Останавливаем контейнер docker stop contId
+    6. Удаляем конт, если при запуске не было опции --rm -> docker rm contId
+    7. Возвращаемся к пункту 2
+
+Docker Hub - хранилище сборок
+
+
+--- Console command ---------------------------------------------------------
+# info
+docker                          # все команды
+docker COMMAND --help           # детальное описание команды
+docker info                     # инфо о докер, память, образы, контейнеры
+docker images                   # посмотреть образы на диске
+docker ps                       # посмотреть запущенные контейнеры (-a все конты)
+
+# dockerhub
+docker login                    # зайти в уч запись
+docker logout                   # выйти
+
+# загрузка образа
+docker pull im_name[:tag]       # загрузка образа из реестра образов (докерхаб
+                                  по умолчанию) на лок машину /var/lib/docker,
+                                  по умолчанию берется образ с тэгом :latest
+
+
+# сборка образа
+docker build -t name:tag path   # собрать Image по Dockerfile
+                                  name - имя Image
+                                  tag  - тэг, необязательный
+                                  path - путь до Dockerfile
+# создать контейнер                             
+docker run im_name/id           # создать контейнер по образу + запустить
+                                  если образа нет - то он скачается с докерхаб
+                                  -d - запуск контейнера в фоновом режиме
+                                  -p 80:80 - маппинг портов hostPort:containerPort
+                                  --rm после отработки/остановки - конт удалится
+                                  im/id - имя Image или id
+                                  --ip
+docker run -it fedora           # -it -i:интерактивный режим -t:функции терминала
+                                  запуск контейнеров где есть оболочка(ОС, ЯП)  
+
+# остановить/запустить контейнер
+docker stop c_name/id           # остановить контейнер
+docker start c_name/id          # запустить контейнер
+                                  -ai запустить в интеррактивном режиме, тот что
+                                  был запущен с run -it
+docker restart c_name/id        # остановить + запустить 
+docker pause c_name/id          # пауза
+docker unpause c_name/id        # снять с паузы
+docker kill c_name/id           # убить контейнер, если не останавливается
+
+# удаление контейнеров
+docker rm id/c_name             # удалить контейнер по ID/name
+                                  удалить несколько - через пробел
+docker rm $(docker ps -aq)      # удалить все контейнеры
+
+# удалить образ
+docker image rm id              # удалить образ -f - принудительно
+docker rmi name:tag             # удалить ссылающийся образ на др образ
+
+# установить тэг
+docker tag im/id name:tag       # создать новую ссылку на существующий образ с
+                                  любым названием и тэгом, в качестве источника
+                                  может быть id, name, name:tag
+
+# скопировать образ на другую машину
+docker save -o имя_образа.tar имя_образа:тег    # сохраняем в файл
+scp myapp.tar user@IP:/path                     # копируем на дпугую машину
+docker load -i /path/myapp.tar                  # извлекаем образ на другой машине
+                                                  можно запускать контейнер
+
+# example
+docker run --rm --name web -p 8080:8080 myProject
+----------------------------------------------------------------------------
+
+
+# прикрепить к Docker директорию на хостовой машине
+-v absHostPath:absLocalPath # абсолютный хост путь : абс путь в контейнере
+
+--- docker volume ---- 
+Прикрепить хостовые директории(для хранения постоянных файлов)
+# прикрепить к Docker директорию на хостовой машине
+-v absHostPath:absLocalPath # абсолютный хост путь : абс путь в контейнере
+
+docker volume create    # Create a volume
+docker volume inspect   # Display detailed information on one or more volumes
+docker volume ls        # List volumes
+docker volume prune     # Remove all unused local volumes
+docker volume rm        # Remove one or more volumes
+docker run -v volumeName:absHostPath    # запуск volume:хост путь
+
+Прикреплять данные к контейнеру можно с помощью лоальной директории
+
+# копировать данные с тома себе на локальный комп
+docker cp container_id:/data/path/to/file_dir /path/on/host
+
+
+
+--- Управление несколькими контейнерами ---
+Docker Compose - управление и запуск нескольких контейнеров с помощью YAML
+Kubernetes или OpenShift - оркестраторы, управляют множеством контейнеров
+
+# Docker compose
+# Команды запускаются в директории где расположен docker-compose.yml
+docker-compose --help           # info о всех командах
+docker-compose COMMAND --help   # info конкретной команды
+docker-compose up               # запускает все контейнеры, определённые в docker-compose.yml
+                                  -d запускает контейнеры в фоновом режиме 
+docker-compose logs <service>   # логи контейнера или всех
+docker-compose ps               # список запущенных контейнеров
+docker-compose down             # остановить и удалить контейнеры
+docker-compose exec serv bash   # Выполняет команду(например bash) в конкретном запущенном 
+                                  контейнере по имени сервиса например web
+
+# example - проект на 2 спринг микросервиса, + 2 бд + ангуляр для UI
+# project structure
+/project-root
+  ├── docker-compose.yml
+  ├── microservice1
+  ├── microservice2
+  └── ui
+
+# docker-compose.yml
+    version: "3.8"  # Указываем версию Docker Compose
+
+    services:
+      # Микросервис 1 на Spring Boot
+      microservice1:
+        image: your-spring-microservice1-image:latest               # Указываем имя образа
+        build:
+          context: ./microservice1                                  # Контекст сборки, путь к Dockerfile
+        ports:
+          - "8081:8080"                                             # Прокидываем порт 8080 контейнера на 8081 хоста
+        environment:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://db1:5432/db1     # URL подключения к БД
+          SPRING_DATASOURCE_USERNAME: postgres                      # Имя пользователя для БД
+          SPRING_DATASOURCE_PASSWORD: postgres                      # Пароль для БД
+        depends_on:
+          - db1                                                     # Указываем зависимость от базы данных db1
+        volumes:
+          - ./microservice1:/app                                    # Монтируем локальную директорию в контейнер
+
+     # Микросервис 2 на Spring Boot
+      microservice2:
+        image: your-spring-microservice2-image:latest               # Указываем имя образа
+        build:
+          context: ./microservice2                                  # Контекст сборки, путь к Dockerfile
+        ports:
+          - "8082:8080"                                             # Прокидываем порт 8080 контейнера на 8082 хоста
+        environment:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://db2:5432/db2     # URL подключения к БД
+          SPRING_DATASOURCE_USERNAME: postgres                      # Имя пользователя для БД
+          SPRING_DATASOURCE_PASSWORD: postgres                      # Пароль для БД
+        depends_on:
+          - db2                                                     # Указываем зависимость от базы данных db2
+        volumes:
+          - ./microservice2:/app                                    # Монтируем локальную директорию в контейнер
+
+      # База данных 1 (PostgreSQL)
+      db1:
+        image: postgres:latest                  # Указываем образ PostgreSQL
+        restart: always                         # Перезапускать контейнер в случае сбоя
+        environment:
+          POSTGRES_DB: db1                      # Название создаваемой базы данных
+          POSTGRES_USER: postgres               # Имя пользователя для подключения к БД
+          POSTGRES_PASSWORD: postgres           # Пароль для подключения к БД
+        volumes:
+          - db1-data:/var/lib/postgresql/data   # Монтируем именованный том для хранения данных
+
+      # База данных 2 (PostgreSQL)
+      db2:
+        image: postgres:latest                  # Указываем образ PostgreSQL
+        restart: always                         # Перезапускать контейнер в случае сбоя
+        environment:
+          POSTGRES_DB: db2                      # Название создаваемой базы данных
+          POSTGRES_USER: postgres               # Имя пользователя для подключения к БД
+          POSTGRES_PASSWORD: postgres           # Пароль для подключения к БД
+        volumes:
+          - db2-data:/var/lib/postgresql/data   # Монтируем именованный том для хранения данных
+
+      # Микросервис UI на Angular
+      ui:
+        image: your-angular-ui-image:latest     # Указываем имя образа
+        build:
+          context: ./ui                         # Контекст сборки, путь к Dockerfile
+        ports:
+          - "4200:80"                           # Прокидываем порт 80 контейнера на 4200 хоста
+        depends_on:
+          - microservice1                       # Указываем зависимость от микросервиса 1
+          - microservice2                       # Указываем зависимость от микросервиса 2
+        volumes:
+         - ./ui:/usr/share/nginx/html           # Монтируем локальную директорию в контейнер
+
+    # Определяем именованные тома для хранения данных
+    volumes:
+      db1-data:                                 # Именованный том для базы данных 1
+      db2-data:                                 # Именованный том для базы данных 2
+
+version:        Указывает версию Docker Compose, которую вы используете.
+services:       Используется для определения всех сервисов (микросервисов и баз данных) в приложении.
+image:          Имя Docker-образа для контейнера.
+build:          Указывает контекст сборки и путь к Dockerfile для создания образа.
+ports:          Позволяет прокидывать порты из контейнера на хост.
+environment:    Определяет переменные среды для настройки контейнера.
+depends_on:     Задает зависимость от других сервисов, чтобы гарантировать их правильный порядок запуска.
+volumes:        Монтирует локальные директории или именованные тома в контейнер
+
+Локальные директории: Хороши для разработки, когда вам нужно легко тестировать и вносить 
+                      изменения в код без необходимости пересборки образов или скачивания 
+                      измененных файлов из контейнера.
+Именованные тома:     Лучше подходят для производственных условий, когда нужно обеспечить 
+                      устойчивость данных и разделение данных и кода. Они также могут улучшить 
+                      управление данными при миграции между окружениями 
+                      (например, от разработки к тестированию и продакшену)
+
+FROM openjdk:11-jre-slim
+WORKDIR /app
+COPY target/your-spring-microservice.jar app.jar
+VOLUME ["/data"]                    # создать том для хранения данных
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+services:
+  microservice1:
+    build: ./microservice1
+    ports:
+      - "8081:8080"
+    volumes:
+      - microservice1-data:/data    # использование вашего VOLUME
+volumes:
+  microservice1-data:               # можно не указывать если указан в Dockerile
+

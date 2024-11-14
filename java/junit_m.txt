@@ -1,0 +1,316 @@
+JUnit5
+
+
+--- About ---
+    среда тестирования для приложений Java
+
+    Уровни тестирования:
+    1. Unit testing         - тестирование функции, изоляция от др компонентов
+    2. Integration testing  - несколько функций(units) вместе
+    3. Acceptance testing   - все прилож в целом(функциональное тестирование)
+
+    JUnit5 состоит из подпроектов:
+    JUnit Platform          - запуск тестов на JVM, консоли, IDE
+    JUnit Jupiter           - набор классов для написания тестов
+    JUnit Vintage           - обрат совместимость со старыми версиями
+
+
+--- Maven зависимости ---
+    junit-jupiter-engine    - включает все зависимости(api,platform)
+    junit-platform-launcher - для своего launcher
+    spring-boot-starter-test  для spring-boot
+
+    # плагин для запуска тестов с помощью Maven в фазе test
+    <plugin>    
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M5</version>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>5.9.0</version>
+            </dependency>
+        </dependencies>
+    </plugin>
+    ...
+    # сама зависимомть scope test
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>5.9.0</version>
+        <scope>test</scope>
+    </dependency>
+    
+    # Spring boot
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+
+--- Assertions ---
+    Проверки истины используемые в тестах:
+    assertTrue(booleean, String)    - можно передавать String(вывод в случ ош)
+    assertFalse(booleean)           - ожидается ложь
+    assertEquals(expected, actual)  - ожидалось, получено
+    assertArrayEquals()             - ожидалось, получено для массивов/коллекц
+    assertAll()                     - неск ассертов в методе
+    assertThrows(Excep.class, lamb) - класс ошибки и код завернуть в lambda
+    assertNull()                    - null - right
+    assertNotNull()	                - проверяет, что аргумент не равен null
+    
+    Во всех ассертах можно передавать вторым значением строку для уточнения
+    ошибки при выполнении ассерта.
+
+
+--- Life cycle ---
+    @BeforeAll -> @BeforeEach -> @Test -> @AfterEach -> @AfterAll
+                       ^                       |
+                       | все методы @Test      |
+                       +-----------------------+
+    Можно с пом аннотаций перед каждым тестом и после вып какие-то действия.
+    Также можо что-то вып перед всеми тестами и после всех(static).
+    
+    public class AppTest {
+        private App app;
+
+        @BeforeAll
+        static void before() {
+            System.out.println("Before all");
+        }
+
+        @BeforeEach
+        void beforeEach() {
+            app = new App();
+            System.out.println("Before each: " + this);
+        }
+
+        @Test
+        void userEmptyIfNoUserAdded() {
+            System.out.println("Test1: " + this);
+            Assertions.assertTrue(app.getAll().isEmpty());
+        }
+
+        @Test
+        void usersSizeIfUserAdded() {
+            System.out.println("Test2: " + this);
+            app.add(new User());
+            app.add(new User());
+            Assertions.assertEquals(2, app.getAll().size());
+        }
+
+        @AfterEach
+        void afterEach() {
+            System.out.println("After each: " + this + "\n");
+        }
+
+        @AfterAll
+        static void after() {
+            System.out.println("After all");
+        }
+    }
+
+
+--- Другие аннотации ---
+    @Disabled("Тест временно отключен")                 - можно ставить на классе или на методах
+                                                          тест не выполняется
+    @Nested                                             - тест вложенных классов
+    @ExtendWith(MockitoExtension.class)                 - добавить какие-то расширения
+    @Timeout(value = 100, unit = TimeUnit.MILLISECONDS) - задать время на выполнение теста
+    
+    @ParameterizedTest                                  - вызвать тест несколько раз с различными параметрами
+    @ValueSource(ints = { 1, 2, 3 })                    - указать параметры
+    @NullSource                                         - параметр null
+    @EnumSource                                         - параметры enum
+    @MethodSource("argsProviderFactory")                - передавать в качестве параметров объекты
+    @CsvSource({                                        - несколько параметров
+        "alex, 30, Программист, Работает",
+        "brian, 35, Тестировщик, Работает",
+        "charles, 40, Менеджер, Пинает"
+    })
+
+    @Order                                              - порядок выполнения тестов
+    @DisplayName("Понятное имя для теста")              - Понятное имя для теста
+
+
+--- Mockito ---
+    Mockito - фреймворк для работы с заглушками, mock - макет
+    
+    mock    - новый прокси(вертуальный) объект для любого класса, который игнорируется компиллятором
+              будет принят любым методом или конструктором, которому требуется параметр такого типа
+              проходит проверки instanceof а также .getClass() вернет класс настоящего класса
+    spy     - обертка над существующим объектом, в остальном такой же как mock
+
+    Зависимость:
+    <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>4.2.0</version>
+        <scope>test</scope>
+    </dependency>
+
+    Использование в тестах 2 варианта:
+        @ExtendWith(MockitoExtension.class)         @BeforeEach
+        public class MockitoAnnotationTest {        public void init() {
+            ...                                         MockitoAnnotations.openMocks(this);
+        }                                           }
+
+    Создать mock/spy (на примере класса ArrayList):
+        1 способ:
+            List mockList = Mockito.mock(ArrayList.class);
+            List<String> mockList = Mockito.spy(new ArrayList<String>());
+        2 способ:
+            @Mock
+            List mockList;
+            @Spy
+            List mockList = new ArrayList<String>();
+
+    Мокирование объектов:
+        По умолчанию методы мок объектов ничего не делают, если методы класса возвращают
+        какие либо объекты то мок возвращает null для ссылочных или стандартные знач для
+        примитивов или пустые коллекции для коллекций
+        
+        Переопределение стандартного поведения методов у mock/spy:
+        Mockito.when(mockList.size()).thenReturn(10);       - вернет 10 при вызове mockList.size()
+        Mockito.doReturn(10).when(mockList).size();         - аналогично
+        Mockito.when(mockList.size()).thenThrow(IllegalStateException.class);   - исключение
+        Mockito.when(mockList.get(2)).thenReturn("hui");    - использование параметров get(2)
+        Mockito.when(mockList.get(2)).thenReturn(anyInt()); - для метода с любыми аргументами
+        Mockito.doAnswer(invocation -> {                    - хитрая логика возвр значения
+            int parameter = invocation.getArgument(0);
+            return parameter * parameter;
+        }).when(mockList).get(anyInt());
+
+        Функции для параметров разных типов:
+        any()	                Object, включая null
+        any(ClassName.class)	ClassName
+        anyInt()	            int
+        anyBoolean()	        boolean
+        anyDouble()	            double
+        anyList()	            List
+
+        // вызов метода
+        String name = mockList.get(10);
+        // проверяем вызывался ли метод
+        Mockito.verify(mockList).get(10);
+
+        String name1 = mockList.get(1);  //вызов метода
+        String name2 = mockList.get(2);  //вызов метода
+        String name3 = mockList.get(3);  //вызов метода
+        // проверяем, что метод get() вызывался 3 раза
+        Mockito.verify(mockList, times(3)).get(anyInt());
+
+        Функции на проверку кол-ва вызовов:
+        never()	        Метод никогда не должен вызываться
+        times(n)	    n раз
+        atLeast(n)	    n или больше раз
+        atLeastOnce()	1 или больше раз
+        atMost(n)	    n или меньше раз
+        only()	        Должен быть только один вызов и только к этому методу
+
+        // задаем поведение метода (нужно только для демонстрации)
+        Mockito.when(mockList.size()).thenThrow(IllegalStateException.class);
+        // проверяем бросится ли IllegalStateException при вызове метода size
+        assertThrows(IllegalStateException.class, () -> mockList.size());
+        
+    Мокирование статического метода:
+        Зависимость:
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>4.2.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        try (MockedStatic<StaticUtils> utilities =  Mockito.mockStatic(StaticUtils.class)) {
+            //добавляем правило
+            utilities.when(StaticUtils::name).thenReturn("Привет");
+            //проверяем, что правило работает
+            assertEquals("Привет", StaticUtils.name());
+        }
+    
+
+Spring Boot MVC test
+    тестирование главной страницы spring-boot MVC приложения, а именно
+    класса-контроллера, метода обработки главной страницы на url "/".
+
+    // контроллер
+    @Controller
+    public class HomeController {
+        @GetMapping("/")
+        public String home() {
+            return "home";
+        }
+    }
+
+    // view (Thymeleaf)
+    документ .html положить в resources/templates
+    картинку в resources/static/images
+    th:src - Thymeleaf-атрибут и выражение @{...} описывает ссылку на 
+    изображение с контекстно-зависимым путем.
+    
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8"
+            xmlns="http://www.w3.org/1999/xhtml"
+            xmlns:th="http://www.thymeleaf.org">
+        <title>home</title>
+    </head>
+    <body>
+        <h1>Welcome to...</h1>
+        <img th:src="@{/images/action.png}">
+    </body>
+    </html>
+
+    // test
+    @WebMvcTest. Это специальная тестовая аннотация из Spring
+    Boot, которая организует запуск теста в контексте приложения Spring
+    MVC. В данном случае она обеспечивает регистрацию класса Home-Controller 
+    в Spring MVC, чтобы дать возможность отправлять ему запросы.
+    MockMvc - объект для имитации механики Spring MVC (без запувка Tomcat)
+    testHomePage() - определяет тест для проверки дом страницы(GET "/"),
+    ожидается следущее:
+        ответ должен иметь статус HTTP 200 (ОК);
+        представление должно иметь логическое имя home;
+        получившаяся страница должна содержать текст «Welcome to...».
+
+    import org.junit.jupiter.api.Test;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+    import org.springframework.test.web.servlet.MockMvc;
+    import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+    import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+    @WebMvcTest
+    public class HomeControllerTest {
+        @Autowired
+        private MockMvc mockMvc;
+
+        @Test
+        public void testHomePage() throws Exception {
+            mockMvc.perform(MockMvcRequestBuilders.get("/"))
+                    .andExpect(status().isOk())
+                    .andExpect(view().name("home"))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                            "Welcome to..."
+                    )));
+        }
+    }
+ 
+
+--- Best practces ---
+    1. хранить тесты отдельно от бизнесс классов - src/main/test
+    2. название пакета должно быть такое же как у основных классов
+    3. называем тесты согласно given_when_then 
+       givenRadius_whenCalculateArea_thenReturnArea()
+    4. ожидание/реальность - вставляем assertions внутрь методов
+    5. используем простейшие тесты с захардкоденными результатами,
+       не используем бизнесс логику в тестах.
+    6. для 1 ассерта используем 1 тест, не стоит объединять
+    7. придумываем для тестов правдивые задачи, совпадающие с реальностью
+    8. используем Mockito, EasyMock and JMockit если требуется
+    9. с пом аннотаций @BeforeEach @AfterEach создаем/удаляем объекты 
+       для тестирования под каждый случай

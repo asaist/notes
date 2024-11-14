@@ -1,0 +1,1837 @@
+// JavaScript
+--- Стандарты ---
+    В новый стандартах добавляются полезные фишки
+    ECMAScript 2009 - ES5
+    ECMAScript 2015 - ES6
+    "use strict";   // использовать в нач документа - означает соотв-е ES6+
+
+--- Комментарии ---
+    // comment
+    /*
+        multiline comment
+    */
+
+--- Литералы ---
+    10          // целое 
+    3.14        // дробное
+    'dom'       // строки
+    "dom"       // строки
+    [1,2]       // массив
+    {name:'X'}  // объект
+    (ab|bc)     // рег выражение
+
+--- Константы и переменные ---
+    const MAX_VALUE = 200;      // константа(в верх регистре)
+    const minValue = arr[0];    // вычисляемая константа(в ниж регистре)
+    let arr = ['HTML','CSS'];   // переменная, обычное поведение(C++, Python)
+    var section;                // переменная, по старым стандартам(устар.)
+
+--- Операторы ---
+    + - * / % ** ++ --          // arithmetic
+    = += -= *= /= %= **=        // assignment
+    == === != !== > < >= <= ?   // ==(типы приводятся) ===(не приводятся)
+    && || !                     // logical
+    & | ~ ^ << >> >>>           // bit
+    typeof()                    // type
+    instanceof()                // instance of Array
+    in                          // вхождение
+    arr['HTML']                 // по ключу
+    arr.HTML                    // через точку
+
+--- ES2015 ---
+    const httpOptions = { timeout: 2000, isCache: true };
+    // создание сразу двух httpTimeout, httpCache констант из объекта 
+    const { timeout: httpTimeout, isCache: httpCache } = httpOptions;
+    // создание 2-х констант с теме же именами что и поля объекта
+    const { timeout, isCache } = httpOptions;
+
+    // default values
+    mySize = size || 10;    // если size === undefined => mySize = 10
+
+    // rest operator
+    function addPonies(...ponies) {     // массив по которому можно итерироваться
+        for (let pony of ponies) {      // for-of итерируемся по массиву
+            poniesInRace.push(pony);
+    const minPrice = Math.min(...arr);  // можно передавать в ф-ии
+
+--- Типы ------------------------------------------------------------------
+    typeof()    // look a type of variable
+    Number      // 0, -2, 3.14, 123e5, 12e-2, NaN, ±infinity
+    BigInt      // 12345678901234567890n числа неогр длины -(n) на конце
+    String      // 'hello' "world" `fuck ${name}`
+    Object      // {}, [], null
+    bollean     // true, false
+    undefined   // let car; не определенная переменная
+    Symbol      // symbol - уник идентиф в объектах
+    function    // function
+    
+    null        // спец объект обозначает 'ничего'
+    NaN         // вычислительная ошибка - люб мат операц с NaN это NaN
+    Infinity    // +infinity
+    -Infinity   // -infinity
+
+    -------
+    typeof x или typeof(x) - возвращ строковое знач типа данных
+    example: if(typeof(obj === 'object'))
+
+    строковое представление типов, при исп функции typeof():
+    number
+    string
+    object
+    undefined
+    boolean
+    bigint
+    function
+    symbol
+
+    динамическая типизация - у переменых нет типа
+    1 перемнной может быть присвоен различный тип данных по ходу кода
+
+Приведение типов:
+    String(78)  // '78' к строке
+    Number('9') // 9 к числу
+    +"10"       // 10 к числу
+    Number('J') // NaN
+    Boolean(9)  // true
+    parseInt("12")          // к целому числу
+    parseInt("15px", 10)    // к целому числу с указанием СИ
+    parseFloat("15.2")      // к числу с плав точкой
+
+Автоприведение типов
+    "7" + 8     // "78" если в сложении учавствует хоть 1 строка - рез-т строка
+    8 + 'px'    // "8px"
+    8/"2"*2     // 2 во всех других арифм операциях приводится к Number
+
+Численное преобразование:
+    undefined   -> NaN
+    null        -> 0
+    true        -> 1
+    false       -> 0
+    ""          -> 0
+    " 123\n"    -> 123 происходит изначально trim
+    " sdf"      -> NaN
+
+Логическое преобразование:
+    0, "", undefined, NaN   - false
+    все остальное           - true
+
+--- Взаимодействие: alert, prompt, confirm ---------------------------------
+// перекрывают взаимодействие со страницей, пока не будет что-то нажато.
+alert("Hello");             // окно с сообщ и кнопкой, ждет пока наж ОК
+res = prompt('text', '1');  // окно с сообщ и полем ввода и кнопками ок 
+                               отмена, второй парам не обяз - возвращается
+                               если пользователь ничего не ввел и нажал ОК
+                               если отмена - возврат null
+result = confirm(question); // ok - true, отмена - false
+
+--- Функции ---------------------------------------------------------------
+    let b = 12;             // глобальная переменная - видно внутри функций
+                               также их можно менять в функциях
+    function foo() {        // объявление функции (видна до и после объявления)    
+        let a = 5;          // видно только в функции
+        return true;        // обычная функция
+    }
+
+    let foo = function() {  // функциональное выражение (видна посе объявления)
+        return true;        // можно исп неименованную (типа lambda Python)
+    };                      // в конце выражения ;
+    
+    let foo = () => true;   // стрелочная функция, аналог той что выше
+    let foo = а => true;    // 1 аргумент
+    let foo = (a,b) => a+b; // пример вычисления суммы, для многострочных при-
+                               меняются {}, но возврат через return
+    let foo = new Function('a', 'b', 'return a+b;');    // функция "на лету"
+                                                           не раб в замыканиях
+    foo();                  // вызов функции(указателя/ссылки)
+
+    Функции не возращающие значения - не явно возвращают undefined
+    return;                         - не явно возвращается undefined
+
+Параметры ф-ии:
+    function sum(a, b=100, ...args)     // a, b - позиц парам, b - имеет знач
+                                           по умолч. ...args - массив осталь-
+                                           ных арг-ов, может быть пустым
+    sum(20,30);     // норм a=20, b=100
+    sum(20);        // норм a=20, b=100(default)
+    sum(20,30,40);  // норм a=20, b=100, args = [40,]
+    sum();          // error - отсутствует обяз аргумент а
+
+
+Функция setTimeout:
+    Отложенный вызов - вызывается параллельно, не зависит от расположения
+    Вызывается функция/выражение указанное в первом аргументе после указанного
+    во втором аргументе промежутка времени в миллисекундах
+                             ф-ия|выр   задерж мс  аргументы ф-ии
+    let timerId = setTimeout(func|code, [delay], [arg1], [arg2], ...)
+    clearTimeout(timerId)   // остановка вызова setTimeout
+    setTimeout("alert('Привет')", 1000);        // можно исп строки с выраж-м
+    setTimeout(() => alert('Привет'), 1000);    // или стрелочные
+
+Функция setInterval:
+    let idClock = setInterval(foo, 1000);       // вызыв-ся циклич-ки через 1с
+    clearInterval(idClock)                      // остановка
+
+Встроенные атрибуты ф-ий:
+    function foo(msg) {
+        console.log(msg);
+    }
+    foo.name    # имя ф-ии
+    foo.bar = 0 # добавить свой аттр
+    foo.call    # позвол вызв ф-ии с указ их контекста (context,arg1,arg2,...)
+    foo.apply   # позвол вызв ф-ии с указ их контекста (context, args) массив
+
+--- Лексическое окружение  ---
+    Лексическое окружение - внешнее/внутренние - scope/зона видимости
+    на самом деле это объекты лекс окр - хранящие свойсва этих зон вид-ти
+    работу этих объектов контолирует интерпретатор, эти объекты существуют у 
+    любого блока кода { ... }
+
+    let number = 5;
+    function logNumber(){
+        let number = 4;
+        console.log(number);
+    }
+
+    Scope
+    Local:          // record environment - сначала ищется все тут
+        this: undefined
+        number: 4
+    Script:
+        number: 6
+    Global:    
+
+--- Замыкания ---
+    Замыкание - это еще один объект лексического окружения, который
+    может существовать в блоках
+        Scope
+        Local:      
+        Closure:    
+        Script:
+        Global: 
+
+    function createCounter(){           // функция которая возвращ др ф-ю
+        let counter = 0;                // переменая
+
+        const myFunction = function(){  // возвращаемая функция
+            counter ++;                 // ссылаемся на внеш обл видимости
+            return counter;
+        };
+        return myFunction;
+    }
+
+    const increment = createCounter();  // тут получаем функцию + лексическое окружение,
+    const c1 = increment();                которое существовало при ее создании,
+    const c2 = increment();                можно использовать это лекс окружение,
+    const c3 = increment();                замыкание это ссылка на counter из влож ф-ии
+
+    console.log(c1, c2, c3);    // 1 2 3
+
+    --- Функции-генераторы ---
+    function* myGen() {                 // помечаем звездочкой
+        yield 1;                        // возвращает каждый раз и 
+        yield 3;                           останавливается на этом месте
+        yield 5;                           до след вызова
+    }
+
+    myGen.next();                       // вызов ф-ии - возвращает объект:
+                                           {value: 1, done: false}
+                                           value - значения ретурна из yield
+                                           done - кончился ли генератор или нет
+
+--- Objects --------------------------------------------------------
+    let user = new Object();    // синтаксис "конструктор объекта"
+    let user = {};              // синтаксис "литерал объекта"
+    {ключ: значение}            // ключи - это строки, знач - любые объекты 
+    newKey = 'gender';
+    const person = {
+        firstName: "John",
+        lastName: "Doe",
+        id: 5566,
+        her,                    // сокращенно her:her
+        for: 2,                 // допустимы let for return
+        0: 123,                 // 0 -> '0'
+        [user]: user            // исп переменных в ключах и значениях
+        [выраж + перем]: male,  // люб вычисляемое занач из переменных/текста..
+        fullName: function () { // this(тек бъект) т.е поля этого объекта
+            return this.firstName + " " + this.lastName;
+        },
+        getId() {               // ES6 - компактный вариант
+            return this.id;     
+        },
+    };
+
+    Стрелочные функции не имеют this!
+
+    person.firstNsme        // обращение к полю. 
+    person['firstName']     // аналогично
+    person.salary = 100     // изм знач атр, либо создание атр, если такого нет
+    delete person.salary    // удалить атрибут 
+    "salary" in person      // проверка на вхождение ключа 
+    person.salary !== undefined // та же проверка на вхождение 
+    person['hi bye']        // получение поля если название с пробелом
+
+    # пробежаться по объекту
+    # свойства с целочисленными ключами сортируются по возрастанию,
+      остальные располагаются в порядке создания
+    for (let key in user) {
+        // ключи
+        alert( key );  // name, age, isAdmin
+        // значения ключей
+        alert( user[key] ); // John, 30, true
+    }
+
+    let user = {
+        name: "John",
+        age: 30,            // можно заканчивать запятой 
+    }
+
+    const user = {          // объект можно менять внутри, но ссылку нельзя
+        name: "John"
+    };
+
+    # + ссылка на объект
+    let a = {}; 
+    let b = a;
+    b == a;     // true - ссылаются на один и тот же об
+
+    # копирование объекта
+    let clone = {}; // новый пустой объект
+    for (let key in user) {
+        clone[key] = user[key];                 // поверхностная копия
+    }
+    const deepClone = Object.assign({}, user);  // глубокая копия объекта   
+    const deepClone = {...user};                // глубокая копия объекта(ES9)
+
+    // функция возвращающая объект
+    function createCar(model, color) {
+        return {
+        model: model,
+        color: color
+        };
+    }
+    let car = createCar("toyota", "black");
+
+    --- Функции-конструкторы технически являются обычными функциями
+       два соглашения:
+       Имя функции-конструктора должно начинаться с большой буквы
+       Функция-конструктор должна выполняться только с помощью оператора "new"
+    
+    function Book(title, author) {          // ф-ция конструктор
+        // this = {};   // (неявно)
+        this.title = title;
+        this.author = author;               // поле
+        this.sayHi = function() {           // метод
+            alert("Hello " + this.author);
+        };
+        // return this; // (неявно)         // возвращает новый объект
+    }
+    let book = new Book("Муму", "Турген");  // можно плодить объекты    
+
+    new.target - св-во внутри функции, проверка, вызвана ли функция 
+    при помощи оператора new или без него.
+    function User() {
+        console.log(new.target);
+    }
+    User();     // undefined            new.target = undefined
+    new User(); // function User()...   new.target = самой ф-ии
+    User.prototype.foo = function() => {};  // добавить всему классу какой-то атриб
+
+    --- Контекст -------------------------
+    Получение/использование контекста:
+    1. в обычной функции
+    function foo() {
+        console.log(this);                  // this = window, для 'strict' - undefined
+    }
+    2. в методе объекта
+    let obj = {
+        a: 12,
+        sum: function() {
+            console.log(this);              // this - это сам объект obj
+        }
+    }
+    3. в ф-ии конструкторе/классе
+    function Book(title, author) {         
+        // this = {};   // (неявно)
+        this.title = title;                 // this - возвращаемый новый объект
+        // return this; // (неявно)         // возвращает новый объект
+    }
+    4. в специальном свойстве ф-ии(call, apply, bind), передав туда объект
+    foo.call(obj);                          // теперь при вызове обыч ф-ии this=obj
+    foo.apply(obj);                         // то же самое, но если есть доп аргументы - 
+                                               передаем их в массиве, а не через запятую
+    function count(num) {
+        return this*num;
+    }
+    const double = count.bind(2);           // 2 - this, bind связывает аргумент с this
+    double(3);                              // 3 - num
+    5. в обработчиках событий
+    b.addEventListener('click',function(){  // обычн синтаксис ф-ии
+        console.log(this);                  // this - это сам элемент на котором висит обработчик
+    });
+    b.addEventListener('click', () => {     // стрелочная ф-ия, нет своего контекста
+        console.log(this);                  // this - это объект window(родительский контекст)
+    });
+
+
+
+    --- Преобразование объектов в примитивы: -------------------
+        - объект может быть преобразован тоьлко в строку или число 
+        - математическая операция с объектами - возвращает примитив
+        - числовое преобразование происходит, когда мы вычитаем объекты
+          или применяем математические функции
+        - преобразование к строке log(obj)/alert(obj).. типа такого
+    Хинты:
+        спец методы объекта - реализуют преобразования объектов
+        "string"    - к строке alert(obj); anotherObj[obj] = 123;
+        "number"    - к числу let num = Number(obj); let n = +obj;
+        "default"   - оператор «не уверен», какой тип ожидать
+                      let total = obj1 + obj2;
+    Чтобы выполнить преобразование, JavaScript пытается найти и вызвать
+    три следующих метода объекта:
+        obj[Symbol.toPrimitive](hint);  // метод с символьным ключом
+        obj.toString(); obj.valueOf();  // иначе хинт = "string"
+        obj.valueOf(); obj.toString();  // иначе хинт = "number" or "default"
+
+    Object - спец объект для работы с объектами:
+    Object.keys(obj)    // массив ключей объекта obj
+    Object.values(obj)  // массив значений
+    Object.entries(obj) // массив массивов ключ-значение
+
+    Деструктуризация объекта:
+    const obj = {       // исходный объект
+        name: 'test',
+        width: 2048,
+        color: {
+            r: 196,
+            b: 96,
+            g: 128
+        }
+    };
+    const {r,g,b} = obj.color;  // деструктуризация
+    console.log(g);             // 128
+
+--- Геттеры/Сеттеры ---
+весь прикол состоит в том что к ним обращаться можно без скобок()
+const person = {
+    name: 'Ivan',
+    age: 23,
+
+    get userAge() {             // getter
+        return this.age;
+    }
+
+    set userAge(num) {          // setter
+        this.age = num;
+    }
+}
+
+person.userAge;                 // обращение к свойству без () - getter
+person.userAge = 40;            // обращение к свойству без () - setter
+
+
+--- Classes/Классы ------------------------------------------------------------
+Это обертка над функциями-коннструкторами, синт сахар
+class Rectangle {                           // класс
+    constructor(height, width, parent) {    // конструктор
+        this.height = height;               // иниц поля
+        this.width = width;
+        this.parent = document.querySelector('#parent');
+    }
+
+    calsArea() {                            // метод
+        return this.height * this.width;
+    }
+
+    render() {                              // отрисовка
+        const div = document.createElement('div');
+        div.style.width = this.width;
+        div.style.height = this.height;
+        div.style.backgroundColor = 'red';
+        div.textContent = 'Hello blya!';
+        this.parent.append(div);
+    }
+
+    get color() {                           // геттер
+        console.log('get color');
+        return this._color;
+    }
+    set color(newColor) {                   // setter
+        console.log(`set color ${newColor}`);
+        this._color = newColor;
+    }
+
+
+const square = new Rectangle(12,13);        // объект
+console.log(square.calsArea());
+
+class ColoredRect extends Rectangle {       // наследование
+    constructor(height, width, color) {
+        super(height, width);               // вызов конструктора родителя
+        this.color = color;
+    }
+}
+
+
+--- OOP --------------------------------------------------------------------
+Каждый экземпляр какого-то класса имеет имеет поля и методы, которые можно
+использовать. Все эти свойства экз видны в dev-tools браузерa
+const arr = [1,2,3,4];
+console.log(arr);   // выведет сам массив + [[Prototype]]: Array(0)
+                       для объектов будет   [[Prototype]]: Object
+[[Prototype]]: Object - это и есть класс нашего экземпляра со всеми св-ми
+Object - вершина для всех, все в итоге наследуют поля и методы от него,
+что-то дополняя или переопределяя
+
+Наследование:
+const soldier = {           // parent
+    health: 400,
+    armor: 100
+};
+
+const john = {              // child
+    health: 100
+};
+
+john.__proto__ = soldier;               // устаревший способ
+Object.setPrototypeOf(john, soldier);   // добавить связь parent/child
+const mike = Object.create(soldier);    // создать наследника от parent
+
+Инкапсуляция(имитация):
+class User {
+    constructor(name, age) {
+        this.name = name;
+        this._age = age;                // скрытая переменная(типа)
+    }
+    
+    surname = 'Bond';                   // открытое свойство
+    #patronamic = 'Yurevich';           // реально скрытое св-во
+    
+    say = () => {                       // метод
+        console.log(`${this.name}: ${this._age} : ${this.surname} : ${this.#patronamic}`);
+    }
+    
+    get age() {                         // getter
+        return this._age;
+    }
+    
+    set age(num) {                      // setter
+        if(num > 0){
+            this._age = num;
+        }
+    }
+}
+
+const ivan = new User('Ivan', 44);
+ivan.age = 23;
+ivan.say();
+
+const ivan = new User('Ivan', 44);
+ivan.age = 23;
+
+
+--- Модули -----------------------------------------------------------
+Модули нужны для разделения большого кода на отдельные файлы(модули)
+Модуль обычно содержит класс или библиотеку с функциями.
+Модуль – это просто файл. Один скрипт – это один модуль.
+
+Модули работают только если их собрать, например с помощью Webpack!
+https://webpack.js.org/guides/getting-started/
+webpack собирает все в нечто подобное:
+const number = 1;
+
+// вариант 1
+(function(){                        // анонимная самовызывающаяся ф-ия
+    let number = 2;
+    console.log(number);            // 2
+}());
+console.log(number);                // 1
+
+// вариант 2
+const user = (function() {
+    const privat = () => {
+        console.log('hello');
+    };
+    return {
+        sayHello: privat
+    };
+}());
+
+user.sayHello();                    // hello
+
+--- Устаревшие модульные системы ---
+AMD – одна из самых старых модульных систем, изначально реализована библиотекой require.js.
+CommonJS – модульная система, созданная для сервера Node.js.
+UMD – ещё одна модульная система, предлагается как универсальная, совместима с AMD и CommonJS.
+# file1.js
+function myModule() {               // функция - модуль
+    this.hello = function(){
+        console.log('hello!');
+    };
+
+    this.bye = function(){
+        console.log('bye!');
+    };
+}
+module.exports = myModule;          // для вызова из других файлов <----+
+                                                                        |
+# file2.js                                                              |
+const mod = require('./file1.js');  // импорт --------------------------+
+const myObj = new mod();            // создать объект ф-ии myModule из др файла
+
+--- В чем прикол! ---
+удобно добавлять/менять модули
+в итоге будет 1 файл в котором будут вызваны все модули по типу
+    window.addEventListener('DOMContentLoaded', () => {
+        const mod1 = require('./modules/mod1');
+        const mod2 = require('./modules/mod2');
+        const mod3 = require('./modules/mod3');
+
+        mod1();
+        mod2();
+        mod3();
+    });
+и несколько файлов(модулей) по типу:
+    function mod1() {               // функция - модуль
+        log('Hello');
+    }
+    module.exports = mod1;          // экспорт
+собираем все это с помощью webpack
+
+--- модули ES6+ import/export ---
+# main.js
+export let one = 1;                 // экспорт переменной
+let two = 2;
+const sayHi = () => console.log('Hi');
+export {two, sayHi};                // именованный экпорт неск переменных
+export default function sayHui() {  // только 1 дефаулт экспорт
+    log('hui');
+}
+
+# index.js
+import {one, two, sayHi} from '../js/main'; // импорт каждой переменной
+console.log(`${one} ${two}`);
+sayHi();                                    // обращение
+import * as data from '../js/main';         // импорт всех в одну перем
+data.sayHi()                                // обращение
+import hui from '../js/main';               // импорт дефаулт экспорта
+
+--- Symbol -----------------------------------------------------------------
+в качестве ключей для свойств объекта могут исп только строки или символы
+// Создаём новый символ - id с описанием(метка) "id"
+let id1 = Symbol("id");     // каждый раз уник, метка ни на что не влияет
+let id2 = Symbol("id");     // не равен выше стоящему символу
+id1.description;            // -> id, возвраает метку              
+
+// символы не преобразоваются автоматически в строки
+alert(id1);                 // TypeError: Cannot convert a Symbol value to..
+alert(id1.toString());      // так можно
+
+// скрытые свойства символов
+let user = {                // some object
+    name: "Вася",
+     [id]: 123              // можно так добавить символ, литералом
+};
+let id = Symbol("id");      // символ
+user[id] = 1;               // если доб свойсво так - оно будет скрыто в 
+                               других частях программы (за скопом)
+alert(user[id]);            // доступ к данным по ключу-символу
+если в какой-то другой части программы к этому объекту вновь добавить
+свойство, пускай даже под таким же именем
+let id = Symbol("id");      // символ в другой части программы
+user[id] = 2;               // совершенно другой символ, не затерает первый
+Символы игнорируются циклом for…in
+
+Глобальные символы:
+глобальный реестр символов - создавать в нём символы и обращаться к ним позже,
+                             и при каждом обращении нам гарантированно будет 
+                             возвращаться один и тот же символ.
+// читаем символ из глобального реестра и записываем его в переменную
+let id = Symbol.for("id"); // если символа не существует, он будет создан
+// читаем его снова и записываем в другую переменную (возможно, из другого места кода)
+let idAgain = Symbol.for("id");
+// проверяем -- это один и тот же символ
+alert( id === idAgain ); // true
+// получаем символ по имени
+let sym = Symbol.for("name");
+let sym2 = Symbol.for("id");
+// получаем имя по символу
+alert( Symbol.keyFor(sym) ); // name
+alert( Symbol.keyFor(sym2) ); // id
+
+Системные символы:
+Symbol.hasInstance
+Symbol.isConcatSpreadable
+Symbol.iterator
+Symbol.toPrimitive
+...
+
+--- Strings ---------------------------------------------------------------
+'str';                  - строка, примитивный тип данных
+'str'.toUpperCase();    - при применении методов идет оборачивание в объект
+                          и после метода - снова преобразуется к строке
+let str = new String(); - объект, в такой заворачивается примитивы
+
+escape sequences:
+    \n \t \v \b \f \r
+methods:
+    lenth           // lenth
+    slice(7, 13)    // slice
+    substring()     // slice - cannot accept negative indexes
+    substr(7,6)     // 2 par - specifies the length of the extracted part
+    replace()       // replase
+    toUpperCase()   // to Upper
+    toLowerCase()   // to Lower
+    trim()          // removes whitespace from both sides of a string
+    text.split(",") // Split on commas
+format:
+    `Welcome $(firstname)`
+    `Total: ${(price * (1 + VAT)).toFixed(2)}`
+    `<h2>${header}</h2><ul>` += `<li>${x}</li>`
+search:    
+    String.indexOf()        // position of the first occurrence
+    String.lastIndexOf()    // last occurrence of a specified text
+    String.search()         // returns the position of the match
+    String.match(regexp)    // returns the matches by regular expression
+    String.includes()       // returns true if a string contains a value
+    String.startsWith()     // true if a string begins with a value
+    String.endsWith()       // true if a string ends with a specified value
+
+--- Regex -----------------------------------------------------------------
+Синтаксис создать регулярное выражение:
+new RegExp('pattern', 'flags');
+/pattern/mgi                // шаблон + флаги
+
+флаги:
+i - игнор регистра
+g - пытаемся найти не 1 результат не работает с search
+m - многострочный режим
+s - точка соответствует и \n тоже
+
+const string = 'Hello';     // строка
+const reg = /l/g;           // regex
+string.search(reg);         // -> 2, индекс найденного шаблона или -1 если не найдено
+string.match(reg);          // -> массив ['l','l'], без флага g - выходит первое совпадение и доп массив
+string.replace(/./g, '*' ); // -> *****, string все символы на *
+reg.test(string);           // -> boolean, есть ли совпадение
+
+символьные классы:
+\d - цифры
+\D - не цифры
+\s - пробельные символы, табы, новые строки
+\S - все, кроме \s
+\w - латиница, цифры, подчёркивание '_'
+\W - все, кроме \w
+.  - любой символ, если с флагом регулярного выражения s, в противном случае любой символ, кроме перевода строки \n
+
+якоря:
+^  - начало строки
+$  - конец строки
+
+граница слова:
+\b - граница слова
+
+экранирование:
+[ ] \ ^ $ . | ? * + ( ) /   - спецсимволы которые нужно эранировать с пом \
+
+наборы/диапазоны
+[eao]    - один из символов в скобках
+[0-9A-F] - диапазоны
+[^0-9]   - один не из диапазона
+
+квантификаторы:
+{5}     - точное кол-во символов 5{2} - две пятерки
+{3,5}   - от 3 до 5 повторений
+{3,}    - 3 и более повторений
++       - 1 и более повторений
+?       - 0 или 1 повторение
+*       - 0 и более повторений
+
+жадный/ленивый
+/d+     - жадный режим - найдет максимальное кол-во символов
+/d+?    - ленивый - найдет минимальное кол-во символов
+
+альтернация (или) |:
+gr(a|e)y    - означает точно то же, что и gr[ae]y.
+gra|ey      - означает gra или ey.
+
+скобочные группы:
+https://learn.javascript.ru/regexp-groups - здесь все
+Позволяет поместить часть совпадения в отдельный массив.
+Если установить квантификатор после скобок, то он будет применяться ко всему 
+содержимому скобки, а не к одному символу.
+    /(go)+/ - go, gogo, gogogo
+Формат email: имя@домен. В качестве имени может быть любое слово, разрешены дефисы и точки
+    /[-.\w]+@([\w-]+\.)+[\w-]+/g - my@mail.com, his@site.com.uk
+Содержимое скобок в match:
+Скобочные группы нумеруются слева направо. Поисковый движок запоминает содержимое,
+которое соответствует каждой скобочной группе, и позволяет получить его в результате.
+
+
+--- Numbers --------------------------------------------------------
+    let x = 3.14;       // A number with decimals
+    let y = 3;          // A number without decimals 
+    let x = 123e5;      // 12300000
+    let y = 123e-5;     // 0.00123 
+    let x = 10/"App";   // x will be NaN (Not a Number)
+    isNaN(x);           // checking for NaN
+    let x =  2 / 0;     // x will be Infinity
+    let x = 0xFF;       // x will be 255
+    x.toString();       // to string
+    let x = 9.656;
+    x.toFixed(2);       // округление до сотых '9.66'
+    2**2                // вторая степень
+    2**(1/2)            // квадратный корень
+
+--- Arrays ----------------------------------------------------------------
+    const cars = ["Saab", "Volvo", "BMW"];
+    const fruits = ["Banana", "Orange", "Apple", "Mango"];
+    const points = [40, 100, 1, 5, 25, 10];
+    cars[0] = "Opel";
+    points[points.length-1] // 10 
+    cars.toString();    // return string "Saab,Volvo,BMW"
+    cars.join(" * ");   // return string "Saab * Volvo * BMW"
+    fruits.pop();       // removes the last element from an array
+    fruits.push("Kiwi");// adds a new element to an array (at the end)
+    fruits.shift();     // removes the first array el and "shifts" all
+    fruits.unshift("L");// dds a new element to an array (at the beginning)
+    fruits.sort();      // Sorts the elements of fruits 
+    fruits.reverse();   // reverse the order of the elements
+    points.sort(function(a, b){return a - b}); // сортировка числовая
+    points.sort(function(a, b){return 0.5 - Math.random()});    // random sort
+    function myArrayMax(arr){return Math.max.apply(null, arr);} // max
+    Math.max(1, 2, 3)   // the same as above
+    const cars = [
+        {type:"Volvo", year:2016},
+        {type:"Saab", year:2001},
+        {type:"BMW", year:2010}];
+    cars.sort(function(a, b){return a.year - b.year});  // sort object
+
+Копия:
+    const newArray = oldArray.slice();  // копия массива
+    const newArray = [...oldArray];     // копия массива
+
+Распаковка массива:
+    let items = [1,2,3];        // массив
+    let max = max(...items);    // передать в функцию распакованным
+    let com = [...item,...arr]; // соединить массивы, можно комбинировать с 
+                                   отдельными знач, в любом порявке
+    let letters = [..."Hello"]; // распаковка строки на символы
+
+Перебрка массива:
+    for-of:
+    for (let value of fruits) {
+        console.log(`value=${value}`);
+    }
+
+    for-each:
+    arr.forEach(function(value, index, array) {
+        console.log(`${value} : ${index} : ${array}`);
+    });
+   
+    for-each(lambda):
+    fruits.forEach((val, ind, arr)  => console.log(val));
+
+    // все методы перебора(как стримы в Java)
+    arr.forEach     // просто переборка и применение ф-ии callback
+    arr.map         // -> нов массив, применяет к каждому эл функцию
+    arr.every/some  // -> boolean - каждый подходит под фильтр/хотя бы 1
+    arr.filter      // -> нов массив, фильтрует по ф-ии (el) => el.name === 'hui'
+    arr.reduce      // -> val, [1,2,3].reduce((aсс, el) => acc + el);
+                       acc = 0, el = 1эл, возвращает аккумулир занач в итоге по массиву
+                       reduce((aсс, el, 2) - третий параметр - индекс начала acc
+    arr.sort        // сортировка, если без ф-ии сортирует как строки
+
+    // конвертация в массив
+    Object.entries(obj)     // объект - в массив
+    Array.from(nodelist)    // nodeList(из querySelectorAll) в массив
+
+--- Циклы(loops) ---------------------------
+    while (true) {              // while
+        break;
+    }
+
+    for (var i=0; i<10; i++) {  // for
+        continue;
+    }
+
+    do {                        // do while
+        continue;
+    } while (!false);
+    
+    for(let key in book) {      // foreach для объектов
+        console.log(key+": "+book[key]);
+    }
+
+    for (let value of fruits) { // foreach для массивов
+        console.log(`value=${value}`);
+    }
+
+    outer: for (let i = 0; i < 3; i++) {    // можно исп метки
+
+    icons.forEach(element => {  // foreach для массивов
+        console.log(element);
+    });
+
+--- Условные операторы ----------------------------------------
+    if (true) {                 // if
+        var x = true;
+    } else if (false) {         // else if (elif)
+        var x = 2;
+    } else {                    // else
+        var x = 'hui';          
+    }
+
+    switch (num) {              // switch (тип важен идет ===)
+        case 1: console.log("item = 1");break;
+        case 2: // группировка с 3-м
+        case 3: console.log("item = 2");break;
+        default: console.log("her");
+    }
+
+    Опциональная цепочка (?):
+    Опциональная цепочка ?. останавливает вычисление и возвращает undefined,
+    если значение перед ?. равно undefined или null
+    user.address.street     // обращение к какому-то полю, где ошибка хз
+    user?.address?.street   // проверив каждое перед вызовом или undefined
+    obj?.prop       - возвращает obj.prop если obj существует, else undefined
+    obj?.[prop]     - возвращает obj[prop] если obj существует, else undefined
+    obj.method?.()  - вызывает obj.method(), если obj.method сущ, else возвр undefined
+
+    Тернарный опрератор:
+    let result = условие ? значение1 : значение2;
+    let old = age > 50 ? "oldman" : "young";
+    2 == 2 ? log(true) : log(false);
+
+    Оператор нулевого слияния (??):
+    если первое null или undefined - то берется второе значение, иначе первое
+    result = a ?? b;    // проверка на null и undefined
+    result = (a !== null && a !== undefined) ? a : b; 
+    example:
+    let firstName = null;
+    let lastName = null;
+    let nickName = "Суперкодер";
+    // показывает первое значение, которое определено:
+    alert(firstName ?? lastName ?? nickName ?? "Аноним"); // Суперкодер
+    // будет height=100, если переменная height равна null или undefined
+    height = height ?? 100;
+
+--- Math ---
+random()    // 0 - 0.9999999...
+floor()     // усечение дробной части
+
+
+--- Collections ---------------------------------
+Map - это коллекция ключ/значение, как и Object. Но основное отличие в том, 
+что Map позволяет использовать ключи любого типа.
+Методы и свойства:
+new Map()           - создаёт коллекцию.
+map.set(key, value) - записывает по ключу key значение value.
+map.get(key)        - возвращает значение по ключу или undefined, если ключ key отсутствует.
+map.has(key)        - возвращает true, если ключ key присутствует в коллекции, иначе false.
+map.delete(key)     - удаляет элемент (пару «ключ/значение») по ключу key.
+map.clear()         - очищает коллекцию от всех элементов.
+map.size            - возвращает текущее количество элементов.
+
+Перебор Map
+Для перебора коллекции Map есть 3 метода:
+map.keys()      - возвращает итерируемый объект по ключам,
+map.values()    - возвращает итерируемый объект по значениям,
+map.entries()   - возвращает итерируемый объект по парам вида [ключ, значение],
+                  этот вариант используется по умолчанию в for..of.
+// выполняем функцию для каждой пары (ключ, значение)
+recipeMap.forEach((value, key, map) => {
+  alert(`${key}: ${value}`); // огурец: 500 и так далее
+});
+
+let obj = {
+  name: "John",
+  age: 30
+};
+
+let map = new Map(Object.entries(obj));         // map из объекта
+let obj = Object.fromEntries(map);              // объект из map(entries)
+
+Set
+Объект Set - это особый вид коллекции: «множество» значений (без ключей), где каждое значение может появляться только один раз.
+Его основные методы это:
+new Set(iterable)   - создаёт Set, и если в качестве аргумента был предоставлен итерируемый объект (обычно это массив),
+                      то копирует его значения в новый Set.
+set.add(value)      - добавляет значение (если оно уже есть, то ничего не делает), возвращает тот же объект set.
+set.delete(value)   - удаляет значение, возвращает true, если value было в множестве на момент вызова, иначе false.
+set.has(value)      - возвращает true, если значение присутствует в множестве, иначе false.
+set.clear()         - удаляет все имеющиеся значения.
+set.size            - возвращает количество элементов в множестве
+
+Перебор объекта Set
+Мы можем перебрать содержимое объекта set как с помощью метода for..of, так и используя forEach:
+let set = new Set(["апельсин", "яблоко", "банан"]);
+for (let value of set) alert(value);
+// то же самое с forEach:
+set.forEach((value, valueAgain, set) => {
+  alert(value);
+});
+
+WeakMap() WeakSet() - структуры которые динамически меняются, если объект внутри приравнять null
+                      где-то в коде, то в этих структурах так-же потеряются ссылки. Внутри могут
+                      хранить только объекты.
+
+
+--- Date/Дата, время ----------------------------------------------
+const now = new Date();                 // 2023-03-17T12:45:31.745Z
+const now = new Date('2000-01-01');     // дата по строке 2000-01-01T00:00:00.000Z
+const now = new Date(2000, 5, 1, 20);   // дата по числам-параметрам 2000-06-01T17:00:00.000Z
+const now = new Date(0);                // дата в миллисекундах от 1970-01-01T00:00:00.000Z
+// получить
+now.getFullYear();                      // год
+now.getMonth();                         // месяц
+now.getDate();                          // день
+now.getTime();                          // миллисекунды от 1 1970
+now.getTimezoneOffset();                // разница по таймзоне
+// сохранить
+now.setFullYear(2024);                  // установить год
+// таймер
+let start = new Date();
+let end = new Date();
+let interval = end - start;             // автоматически переводится в миллисекунды
+
+
+--- Errors -----------------------------------------------
+--- try catch ---
+try {                                   // try
+    const a = b / c; 
+} catch(e) {                            // catch
+    log('error', e);                    // e.name, e.message, e.stack
+} finally {                             // finally
+    close();
+}
+
+--- throw ---
+throw 'fuck';                           // throw строка
+throw new Error('fuck');                // имеет name(Error) message(fuck) stack(стэк выз)
+throw new TypeError('fuck');            // спец ошибка name - TypeError
+
+catch(e) {
+    if(e.name === 'TypeError') {        // обработка спец ошибки
+        log(e);
+    } else {
+        throw e;                        // проброс ошибки дальше
+    }
+}
+
+
+--- Debugger ------------------------------------
+F12 - открыть devtools
+F8  - выполнить до сл брейкпоинта
+F9  - шаг - заходит внутрь ф-й
+F10 - шаг поверх, не заходит внутрь
+F11 - шаг как F9 + асинхронные
+Shift+F11 - если случ зашли внуть - на конец ф-ии
+
+если в скрипте написать 
+debugger;   // остановка(breakpoint) скрипта при открытом devtools
+
+
+============================================================================
+--- DOM - Document Object Model --------------------------------------------
+           Window
+    /         |         \
+DOM         BOM         JavaScript
+document    navigator   Object
+            location    Array
+            history     Function
+
+Window  - глобальная переменная - окно браузера со своими методами
+BOM     - доп объекты браузера для работы со всем кроме документа
+DOM     - все содержимое страницы в виде объектов, кот можно менять
+
+Узел    - любой компонент страницы - элемент, текст, comment..
+Элемент - тэги
+
+document - объект который управляет DOM / страница вся - все элементы
+const html = document.documentElement   # html
+const head = document.head              # head
+const body = document.body              # body
+
+--- Загрузка страницы, размещение скрипта
+размещаем скрипты в конце страницы, либо
+<script defer src="js/script.js"></script>  - продолжает загрузку документа, скрипт выполняется
+                                              в фоновом режиме, выполняется после полной загрузки дом дерева,
+                                              если несколько скриптов defer - выполняются по очереди.
+<script async src="js/script.js"></script>  - продолжает загр докуиента, нов скрипт выполняется не дожидаясь 
+                                              загрузки dom, а также не ждет очереди других async скиптов.
+// можно создать динамич скрипт
+const script = document.createElement('script');
+script.src = 'js/test.js';
+script.async = false;       //  по умолчанию async
+document.body.append(script);
+
+--- Навигация по узлам/элементам
+el.firstChild               # первый дочерний элемент <body>
+el.lastChild                # последний дочерний элемент <body>
+el.previousSibling          # предыдущ эл той же грубины вложенности
+el.nextSibling              # следущ эл той же грубины вложенности
+el.parentNode               # родительский элемент
+
+Навигация по элементам(тэгам)
+el.firtElementChild         # первый дочерний элемент <body>
+el.lastElementChild         # последний дочерний элемент <body>
+el.previousElementSibling   # предыдущ эл той же грубины вложенности
+el.nextElementSibling       # следущ эл той же грубины вложенности
+el.parentElement            # родительский элемент
+
+Если при навигации нет узла/элемента - получим null
+
+Коллекции
+el.childNodes               # все дочерние узлы - элементы + комменты,
+                              какой-то текст между тэгами, в общем все узлы
+el.children                 # все элементы(тэги)(и только)
+el.hasChildNodes()          # -> boolean, есть ли доч элем
+el.children[0]              # обращение по индексу
+
+При изменении дерева DOM элементы коллекции автоматом меняют тек состояние
+
+--- Поиск произвольных элементов по селектору, возврат Коллекция NodeList:
+Ко всем полученным объектам из поиска можно применить св-ва навигации.
+querySelectorAll    - возвращает статич коллекцию(сохр на момент создания)
+getElementsBy       - коллекция меняется динамически всегда
+
+Поиск по тэгу/классу
+document.querySelectorAll('.itm');      # по классу
+document.getElementsByClassName('itm'); # аналогично по классу(без точки)
+document.querySelectorAll('img');       # по тегу
+document.getElementsByTagName('img');   # аналогично по тэгу
+document.querySelectorAll('img.hu');    # по тегу с классом
+document.querySelectorAll('.dui, .bui');# элементы нескольких классов
+document.querySelectorAll('.dui .bui'); # элем класса .bui только в эл .dui
+document.querySelectorAll('.item>li');  # 1 ур влож, у элементов класса .item
+                                          ищутся на 1 ур вложенности тэги li
+Поиск по id -> возврат 1 элем:
+document.querySelector('#item');        # 1 элем по id
+document.getElementById('item');        # 1 эл, поиск только c пом document
+
+Поиск по аттрибуту:
+document.querySelectorAll('[value]');   # элементы с аттриб value
+document.getElementsByName('value');    # аналогично по имени аттриб
+document.querySelectorAll('[val="0"]'); # элем с аттрибутом и значением
+
+Искать можно на любом объекте не только document
+document.querySelectorAll('#item').querySelectorAll('img');
+
+Первый попавшийся элемент из коллекции:
+document.querySelectorAll('.item')[0];  # 1-ый элем
+document.querySelector('.item');        # идентично
+
+Первый/ближайший предок:
+elem.closest('.item');                  # ближайший предок или null
+
+метод поиска           | ищет по      | возвращает| поиск внутри эл| Динамич
+-----------------------+--------------+-----------+----------------+--------
+querySelector           any CSS-селек  1 объект    +                -
+querySelectorAll        any CSS-селек  коллккция   +                -
+getElementById          id             1 объект    -                -   
+getElementsByTagName    тэг или *      коллккция   +                +
+getElementsByClassName  имя класса     коллккция   +                +
+getElementsByName       name           коллккция   -                +
+
+Проверка на соответствие объекта(можно исп в if)
+elem.matches('[class$="about__item_active"]')   # -> boolean
+
+--- Изменение элементов
+const mainText = document.querySelector('.training__text');  # найдем элем
+// innerHTML - добавляет как текст так и тэги
+const elementIText = mainText.innerHTML;                     # сохр текст
+mainText.innerHTML =
+    `<p>${elementIText}</p>                                  # вставим текст
+    <p><span class="yellow">FUUUUCK!!!</span></p>`;          # что-то допише
+
+const elementOText = mainText.outerHTML;    # весь объект в текстовой форме
+mainText.outerHTML = `<p>Deleted</p>`       # перезаписать весь объект
+console.log(mainText.outerHTML);            # старый текст можно снова получ
+
+const elementText = mainText.textContent;   # только текст
+mainText.textContent = `<p>hui</p>`         # строка, автоэкранирование тэг
+
+const getComment = mainText.nextSibling;    # получаем комент
+console.log(getComment);                    # получ комент или текст вне тэг
+console.log(getComment.data);               # текст комент
+getComment.data = "fuck!";                  # изменить текст комента
+
+--- Создание элементов
+const newElement = document.createElement('div');   # создать div
+newElement.innerHTML = `Hello`;                     # наполним содержимое
+const newText = document.createTextNode("Fuck u!"); # создать узел, текст
+
+--- Вставка созданных элементов(или сырого текста) тэги преобр в строки
+mainText.appendChild(elem);     # устаревший - то же что append
+mainText.removeChild(elem);     # устаревший - то же что remove
+            ...Child...         # etc
+
+mainText.before(newElement);                # вставить до элемента
+mainText.after(newText);                    # вставить после элемента
+mainText.prepend(newText);                  # внутрь в начало содержимого
+mainText.append(newText);                   # внутрь в конец содержимого
+mainText.append(newText, "some text");      # можно вставлять много объек
+
+    <!-- before -->                 <!-- beforebegin -->
+    <ul class="lesson__list">       <ul class="lesson__list">
+        <!-- prepend -->                <!-- afterbegin -->
+        <li>1</li>                      <li>1</li>
+        <li>2</li>                      <li>2</li>
+        <li>3</li>                      <li>3</li>
+        <!-- append -->                 <!-- beforeend -->
+    </ul>                           </ul>
+    <!-- after -->                  <!-- afterend -->
+
+--- Вставка html тэгов
+1-ый прам куда, 2-й парам что вставляем(тэги/строки)
+mainText.insertAdjacentHTML(`beforebegin`,`<p>text</p>`);   # перед объектом
+mainText.insertAdjacentHTML(`afterbegin`,`<p>text</p>`);    # внутрь объекта перед содержимым
+mainText.insertAdjacentHTML(`beforeend`,`<p>text</p>`);     # внутрь объекта после содержим
+mainText.insertAdjacentHTML(`afterend`,`<p>text</p>`);      # после объекта
+
+insertAdjacentText(`afterend`,`<p>...</p>`);    # вставляет текст как есть безетэгов
+insertAdjacentElement(`afterend`, newElement);  # вставляет элемент(допустим новый)
+
+--- Перенос/перемещение элемента
+// находим элементы
+const trainingHeader = document.querySelector('.training__header');
+const trainingRow = document.querySelector('.training__row');
+// перемещаем
+trainingHeader.before(trainingRow);
+
+--- Копия/Клон объекта
+const cloneHeader = trainingHeader.cloneNode();         // копия верх ур
+const cloneHeaderDeep = trainingHeader.cloneNode(true); // глубокая копия 
+
+--- Замена
+oldElem.replaceWith(newElem);   // заменить на др элемент
+
+--- Удалить объект
+cloneHeaderDeep.remove();   // удалить
+
+--- Управление классами(лучший способ манипуляции компонентами)
+// устаревший
+classNameElem.className;                // классы - string
+classNameElem.className = 'item__loh';  // перезаписать все классы на новы[й|e]
+// более удобный инструмент
+classNameElem.classList;                // классы в спец объекте(итерируемый)
+classNameElem.classList.add('new-cls'); // добавить класс, ('cl1', 'cl2' ...) неск
+classNameElem.classList.remove('cls');  // удалить класс
+classNameElem.classList.toggle('cls');  // доб класс если его нет, если есть - удалить
+classNameElem.classList.contains('cl'); // проверка на наличие - true/false
+
+--- Стили
+Изменить стили в html inline
+element.style.color = "red";            // добавить стиль
+Для стилей из нескольких слов используется camel case:
+element.style.fontSize = "24px";        // для font-size
+element.style.color = "";               // сбросить свойство
+element.style.cssText = `               // сразу несколько стилей
+    margin-bottom: 30px;
+    color:red;
+`;
+Получить текущие значения стилей(чисто чтение) из CSS
+window.getComputedStyle(element)        // вытащить все стили
+getComputedStyle(element).fontFamily;   // вытащить семейство шрифта
+getComputedStyle(element, "::after");   // вытащить стиль псевдоэлемента
+
+--- Атрибуты и свойства
+У разных дом элементов могут быть различные свойства и элементы
+тэг <a>     - свойства связанные со ссылками ...
+<input>     - свойства связанные с полем ввода ...
+Аттрибуты   - парсятся браузером и создаются свойства на основе их
+dir(link);  - получить список всех доступных свойств элемента
+const link = document.querySelector('.lesson__link');  
+const input = document.querySelector('.lesson__input');
+console.log(link.href);                 // http://www...
+console.log(input.href);                // undefined - нет такого свойства
+input.href = 'www.jshuihiu'             // установить нов значение аттриб
+link.hidden = true;                     // скрыть объект с пом свойства
+
+// Работа с нестандартными аттрибутами
+element.hasAttribute('name');           // наличие аттрибута
+element.getAttribute('name');           // значение аттрибута
+element.setAttribute('name', 'value');  // установить аттрибут + значение
+element.removeAttribute('name');        // удалить ат трибут
+setAttribute('onclick', 'clickMe()');   // установить обработчик события
+element.dataset;                        // все аттрибуты нач-ся на data-
+element.dataset.size = "1";             // изменить аттрибут data-size
+element.dataset.fontSize;               // lower camel case для data-font-size
+
+
+--- Размеры окна браузера -----------------------------------
+const elem = document.documentElement;  // весь документ html
+element.clientWidth;                    // ширина окна до полосы прокрутки
+element.clientHeight;                   // высота окна
+element.offsetWidth;                    // ширина окна с полосой прокрутки
+element.offsetHeight;                   // высота окна с полосой прокрутки
+element.scrollWidth;                    // ширина окна всего - игнор прокрутки
+element.scrollHeight;                   // высота окна всего - игнор прокрутки
+window.innerWidth;                      // ширина вместе с полосами прокр
+window.innerHeight;                     // высота
+
+// эти можно изменять
+el.scrollTop;                           // сколько проскролено в px
+
+// макс ширина и высота документа включая прокрученную часть вычислить
+let scrollWidth = Math.max(
+    document.body.scrollWidth, document.documentElement.scrollWidth,
+    document.body.offsetWidth, document.documentElement.offsetWidth,
+    document.body.clientWidth, document.documentElement.clientWidth,
+);
+let scrollHeight = Math.max(
+    document.body.scrollHeight, document.documentElement.scrollHeight,
+    document.body.offsetHeight, document.documentElement.offsetHeight,
+    document.body.clientHeight, document.documentElement.clientHeight,
+);
+
+--- Управление прокруткой страницы
+// получить кол-во прокрученных пикселей, только для чтения
+window.pageYOffset;     // top прокруч пиксели сверху
+window.pageXOffset;     // left прокруч пиксели слева
+
+function setScroll() {          // своя функция, привяз к событию
+    window.scrollBy(0, 50);     // прокрутить на (x, y)
+    window.scrollTo(0,100);     // прокрутить к (x, y)
+}
+
+function setScroll() {          // своя функция, привяз к событию
+    window.scrollTo({
+        top: 50,
+        left: 0,
+        behavior: "smooth"      // плавно, instant - жестко
+    });                         // прокрутить к (x, y) с опциями
+}
+
+// прокрутка до какого-либо элемента
+function setScrollIntoView(top) {   // top - true/false
+    const elem = document.querySelector('.training__text');
+    elem.setScrollIntoView(top);    // true - элемент окажется вверху стр
+}
+function setScrollIntoViewOption(top) { // с опциями
+    const elem = document.querySelector('.training__text');
+    elem.setScrollIntoView({
+        block: "center",    // start end nearest 
+        inline: "nearest",  // center start end
+        behavior: "smooth"  // auto
+    });
+}
+// запретить прокрутку
+function setDisableEnableScroll {
+    document.body.style.overflow = "hidden";        // жестко лочим или
+    document.body.classList.toggle('scroll-lock');  // в CSS лочим/разлочим
+}
+
+--- Метрики элементов на странице
+const block = document.querySelector('.someblock'); // берем элемент
+block.offsetParent;             // род элемент относ кот выполнено позиционирование
+block.offsetLeft;               // положение по гориз относительно родителя
+block.offsetTop;                // положение по вертик относительно родителя
+block.getBoundingClientRect;    // координаты элемента на странице
+
+-----------------------------------------------------------------------------
+
+--- Events ---
+    Для использования события нужно назначить обработчик события.
+    Обработчик события - функция кот срабатывает как только событие произошло
+    
+    Варианты создания обработчиков событий:
+    <button onclick="clickMe()" id="btn">click me</button>  
+    const btn = document.querySelector('#btn');
+    btn.setAttribute('onclick', 'clickMe()');
+    
+    // the best 
+    addEventListener(событиe прописываем без 'on', 
+                     callback function(обыч/стрел),
+                     опции не обяз);    
+    ------------------------------------------------------------------
+    addEventListener('event', callbackFoo);     // добавить обработчик
+    removeEventListener('event', callbackFoo);  // удалить обработчик
+
+    btn.addEventListener('click', clickMe);             // add listener
+    btn.addEventListener('mouseout', () => log('2'));   // add +1 listener
+    
+    // аргументы callback функции(необяз) 1 арг - событие, остальные свои
+    btn.addEventListener('click', (e, args) => {
+        console.log(e);     // объект MouseEvent(тип события, цель, коорды...)
+        e.target;           // элемент на котором висит обработчик
+    });
+
+    Делегирование событий - вешаем обработчик на предка - принимают потомки
+    // можно обработчик навесить на весь div с кнопками и проверять ткнули
+       ли на кнопку или еще куда-то
+    if(event?.target?.tagName === 'BUTTON' ||       // тэг кнопка
+       event?.target?.classList.contains('cls') ||  // проверка на класс
+       event?.target?.matches('button.cls')){       // проверка тэг+класс
+        console.log(event.target);
+    }
+
+    // отдельная callback функция для удобства
+    const delBtn = (e) => e.target.remove();
+    btn.addEventListener('mouseout', delBtn);   // удалит сам себя после соб 
+
+    // всплытие событий
+       два обработчика на элементе и его родителе/влож элементе
+       первым срабатывает обраб влож элемента, потом остальные
+       e.currentTarget;   // в отличие от target показывает текущий элемент
+
+    // переопределить стандартное поведение элементов(ссылки, формы, ...)
+    const link = document.querySelector('a');
+    link.addEventListener('click', function(e) {
+        e.preventDefault());    // сброс стд поведения ссылки
+        console.log('e.target') // своя логика
+    }
+
+    // опции события
+    btn.addEventListener('click', clickMe, {once: true});   // обработчик сраб
+                                                               только 1 раз.
+    
+    Event 	       |  Description
+    ---------------+----------------------------------------------------
+    change 	       | An HTML element has been changed
+    click 	       | The user clicks an HTML element
+    mouseover      | The user moves the mouse over an HTML element
+    mouseenter     | The user moves the mouse in an HTML element
+    mouseout 	   | The user moves the mouse away from an HTML element
+    keydown 	   | The user pushes a keyboard key
+    input          | что-то изменилось поле текста(набор текста)
+    submit         | при нажатии в форме на кнопку submit(не забываем e.preventDefault())
+
+    События при загрузки страницы:
+    onload - срабатывает когда страница полностью прогрузилась со всеми эл
+    DOMContentLoaded - DOM дерево полность прогрузилось(остальное возможно нет)
+    window.onload = foo;                                // использование
+    window.addEventListener('DOMContentLoaded', foo);   // использование
+    document.addEventListener('DOMContentLoaded', foo); // аналогично
+
+
+--- Модальное окно --------------------------------------------------------
+https://www.schoolsw3.com/howto/tryhow_css_modal2.php - пример
+// создаем div и навешиваем стили
+.show {
+    display: block;
+}
+
+.hide {
+    display: none;
+}
+
+.modal {
+    position: fixed; /* Оставаться на месте */
+    width: 200;
+    height: 200;
+    z-index: 1; /* Сидеть на вершине */
+    padding-top: 100px; /* Расположение коробки */
+    left: 200;
+    top: 200;
+    overflow: auto; /* Включите прокрутку, если это необходимо */
+    background-color: rgb(0,0,0); /* Цвет запасной вариант  */
+    background-color: rgba(0,0,0,0.4); /*Черный с непрозрачностью */
+}
+
+// навешиваем события на кнопки и просто меняем видимость окна
+modalTrigger.addEventListener('click', () => {
+    modal.classList.add('show');
+    modal.classList.remove('hide');
+    document.body.style.overflow = 'hidden';
+});
+
+modalCloseBtn.addEventListener('click', () => {
+    modal.classList.add('hide');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+});
+
+
+--- JSHInt --------------------------------------------------------------
+пакет-валидатор кода для VSCode
+устанавливает пакет для node js:
+    sudo apt install npm
+установить jshint глобально:
+    sudo npm install -g jshint
+создаем в дирректории файл .jshintrc и добавляем нужные настройки:
+{
+    "camelcase": true,
+    "indent": 4,
+    "undef": true,
+    "quotmark": false,
+    "maxlen": 80,
+    "trailing": true,
+    "curly": true,
+    "strict": true,
+    "browser": true,
+    "devel": true,
+    "jquery": true,
+    "esversion": 8,
+    "node": true
+}
+документация:
+    https://jshint.com/docs/
+все вложенные директории попадают под валидацию
+
+
+--- JSON -------------------------------------------
+const person = {                        // JS object
+    name: 'Ivan',
+    phone: '+79002341000'
+}
+const json = JSON.stringify(person);    // из объекта в JSON:
+                                           {"name":"Ivan","phone":"+79002341000"}
+                                           добавляются/заменяются двойные ковычки
+const obj = JSON.parse(json);           // из JSON в объект
+
+// глубокий клон объекта с пом JSON
+const clone = JSON.parse(JSON.stringify(person));
+
+
+=== AJAX =================================================================
+Asynchronous JavaScript and XML
+
+
+
+--- Promise ----------------------------------------------------------------------------------
+Promise – это специальный объект, который используется для выполнения асинхронных операций.
+Promise представляет собой обещание выполнить какую-то операцию в будущем, возможно асинхронно, 
+и вернуть результат в виде успешного значения или ошибки.
+
+Promise имеет три состояния:
+pending (ожидание)      — начальное состояние, обещание еще не выполнено и не отклонено
+fulfilled (выполнен)    — обещание выполнено успешно
+rejected (отклонен)     — обещание было отклонено, возникла ошибка
+
+Создать Promise:
+    new Promise((resolve, reject)=> - конструктор принимает функцию с двумя параметрами,
+                                      можно только с одним параметром resolve, если ошибок не будет,
+                                      реализуем логику вызова этих функций в теле функции
+                                      resolve(obj) - выз-ся в случ успешного вып-я асинх опрерации,
+                                                     можно в параметр прокинуть какой-то obj(напр
+                                                     ответ сервера), потом из вне можно
+                                                     получ этот obj с пом .then((obj)=>{})
+                                      reject(err)  - выз-ся в случ ошибки, ошибку кидаем в парам
+
+// example
+const promise = new Promise((resolve, reject) => {  // на этом этапе начинается выполнение кода
+    setTimeout(() => {                              // вызывается через указанный промежуток времени(1000)
+        const randomNumber = Math.random();            и сохраняет результаты, которые потом можно получить
+        if (randomNumber > 0.5) {                      с помощью then/catch
+            resolve(randomNumber);  <-------------------------------+
+        } else {                                                    |
+            reject(new Error('Число меньше 0.5'));  <---------------|---+
+        }                                                           |   |
+    }, 1000);                                                       |   |
+});                                                                 |   |
+                                                                    |   |
+promise                                                             |   |
+  .then((res) => console.log(res))              // в случ успеха ---+   |
+  .catch((err) => console.error(err))           // неудача -------------+
+  .finally(() => console.log())                 // всегда
+
+
+// пример промиса(просто выполняет в случ успеха через время запускается resolve)
+const test = time => new Promise(resolve => setTimeout(() => resolve(), time));
+test(2000).then(() => console.log('ok!'));
+
+// в случае успеха всех - запуск callback
+Promise.all([test(1000), test(2000)]).then(() => console.log('success'));
+
+
+--- async await -------------------------------------------------------------------------------
+Механизм пришедший после промисов, работает поверх их, более удобен
+
+Пример на промисе:
+function sleep(time) {                          // функция возвращающая Promise
+    return new Promise((resolve, reject) => {
+        if (time <= 500) {
+            reject(`${time} is too litle!`);
+        }
+        setTimeout(() => resolve(`поспал ${time}`), time);
+    });
+}
+
+// имитация синхронного кода с пом промисов и цепочки .then
+sleep(1500).then(res => {                       // цепочка промисов - каждый в итоге ждет
+    console.log(res)                               выполнения предыдущего
+    return sleep(1000)
+}).then(res => {
+    console.log(res)
+    return sleep(500)
+}).then(res => {
+    console.log(res)
+    return sleep(200)
+}).then(res => 
+    console.log(res)
+).catch(err => console.log(`Ошибка ${err}`));
+
+// имитация синхронного кода на async await:
+const sleepFoo = async () => {
+    try {
+        const sleep1 = await sleep(1500);
+        console.log(sleep1);
+        const sleep2 = await sleep(1000);
+        console.log(sleep2);
+        const sleep3 = await sleep(500);
+        console.log(sleep3);
+        const sleep4 = await sleep(300);
+        console.log(sleep4);
+        const sleep5 = await sleep(200);
+        console.log(sleep5);
+    } catch (err) {
+        console.log(err);
+    }
+};
+
+sleepFoo();
+
+
+--- fetch -------------------------------------------------------------------------------------
+Fetch - это новый стандарт JavaScript для выполнения запросов на сервер.
+Он заменяет устаревшие методы XMLHttpRequest и jQuery Ajax.
+Fetch позволяет отправлять HTTP-запросы с использованием простого и интуитивно понятного API.
+Запросы могут быть синхронными или асинхронными, и они могут использовать различные методы HTTP
+Технология общения с сервером, основана на промисах
+
+// GET
+fetch('https://httpbin.org/get')            // url
+.then(response => response.json())          // ответ в JSON ковертируем в объект
+.then(obj => console.log(obj.origin))       // обрабатываем дальше наш объект
+.catch(err => console.log('Fuck!' + err));  // в случае ошибки
+
+// не GET
+fetch('https://httpbin.org/post', {         // url
+    method: 'POST',                         // метод
+    body: JSON.stringify({name: 'Mike'}),   // передаваемый объект JSON или строка
+    headers: {                              // заголовки
+        'Content-type': 'application/json'
+    }
+})
+.then(response => response.json())          // ответ в JSON ковертируем в объект
+.then(obj => console.log(obj));             // обрабатываем дальше наш объект
+
+// Реализация в функциях
+механизи async await(ждем завершения запроса)
+async - ставится перед функциями с асинхронными операциями
+await - ставится в асинк ф-иях перед асинк операциями - ждет завершения асинк кода
+
+// GET
+async function getData(url){
+    const response = await fetch(url);
+    if(!response.ok) {                      // ok - boolean(статус 200?)
+        throw new Error('cant fetch');      // обработка ошибки
+    }
+    const jsonData = await response.json(); // ответ в JSON ковертируем в объект
+    return jsonData;                        // возвращаем объект
+}
+
+// вызов GET из кода
+const data = getData('/api')                // просто вызывем из кода
+
+// пример универсального метода, исп POST запрос с данными
+async function postData(url="", data={}) {
+    try {
+    const response = await fetch(url, {     // ждем завершения(или 30 сек по стд)
+        method: "POST",                     // *GET, POST, PUT, DELETE, etc.
+        mode: "cors",                       // no-cors, *cors, same-origin
+        cache: "no-cache",                  // *default, no-cache, reload, force-cache, only-if-cached
+        credentials: "same-origin",         // include, *same-origin, omit
+        headers: {
+            "Content-Type": "application/json",
+            // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        redirect: "follow",                 // manual, *follow, error
+        referrerPolicy: "no-referrer",      // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+        body: JSON.stringify(data),         // body data type must match "Content-Type" header
+    });
+    return await response.json();           // parses JSON response into native JavaScript objects
+    } catch(err) {
+        throw err;                          // в случае неудачи
+    }
+}
+
+// вызов POST из кода
+postData("https://exmpl.com/aner", obj);    // кидаем url и какой-то объект
+
+
+--- Asynchronous vs synchronous--------------------------------------------------------------------
+все обработчики событий(callback), submit форм - все асинхронное
+
+весь асинх код проходит через:
+Web Apis - место в памяти где хранятся отложенные вызовы(callback), после попадают в Callback Queue
+Callback Queue - все callback становятся в очередь после попадают в Call Stack
+Call Stack - после очереди попадают в стэк вызовов и вызываются
+синхронный код попадает сразу в Call Stack
+
+Callback Queue  - очередь макрозадач
+Call Stack      - очередь микрозадачи
+
+Event loop:
+1. макрозадача () => {}
+2. микрозадачи: then/catch/finally/await
+3. render страницы
+
+console.log(1);                         // 1 first
+setInterval(() => log(6), 2000);        // 6 last
+Promise.resolve().then(() => log(3));   // 3
+queueMicrotask(() => log(4));           // 4 - микрозадача вручную
+Promise.resolve().then(() => log(5));   // 5
+console.log(2);                         // 2
+
+
+--- axios --------------------------------------------------------
+Бибилиотека для работы с запросами
+включаем зависимости с пом npm или сразу в html прописываем скрипт
+автоконвертирование в JSON и обратно
+axios.get('api/')
+.then(data => console.log(data.data))               // data => data, status, statusText
+.catch(err => console.log(err));
+
+
+--- localStorage, sessionStorage --------------------------------------------------
+Объекты веб-хранилища localStorage и sessionStorage позволяют хранить пары ключ/значение в браузере.
+В отличие от куки, объекты веб-хранилища не отправляются на сервер при каждом запросе.
+сервер не может манипулировать объектами хранилища
+Хранилище привязано к источнику (домен/протокол/порт). Это значит, что разные протоколы 
+или поддомены определяют разные объекты хранилища, и они не могут получить доступ к данным друг друга.
+
+Объекты хранилища localStorage и sessionStorage предоставляют одинаковые методы и свойства похожие на Map:
+setItem(key, value) - сохранить пару ключ/значение.
+getItem(key)        - получить данные по ключу key.
+removeItem(key)     - удалить данные с ключом key.
+clear()             - удалить всё.
+key(index)          - получить ключ на заданной позиц
+length              - количество элементов в хранилище.
+
+Также можно получать/записывать данные, как в обычный объект:
+// установить значение для ключа
+localStorage.test = 2;
+// получить значение по ключу
+alert( localStorage.test ); // 2
+// удалить ключ
+delete localStorage.test;
+
+Основные особенности localStorage:
+Этот объект один на все вкладки и окна в рамках источника (один и тот же домен/протокол/порт).
+Данные не имеют срока давности, по которому истекают и удаляются. 
+Сохраняются после перезапуска браузера и даже ОС.
+
+// переборка всех ключ:значение
+for(let i=0; i<localStorage.length; i++) {
+  let key = localStorage.key(i);
+  alert(`${key}: ${localStorage.getItem(key)}`);
+}
+
+Мы можем использовать JSON для хранения объектов:
+localStorage.user = JSON.stringify({name: "John"});
+
+Объект sessionStorage используется гораздо реже, чем localStorage.
+Свойства и методы такие же, но есть существенные ограничения:
+sessionStorage существует только в рамках текущей вкладки браузера.
+Другая вкладка с той же страницей будет иметь другое хранилище.
+Но оно разделяется между ифреймами на той же вкладке (при условии, что они из одного и того же источника).
+Данные продолжают существовать после перезагрузки страницы, но не после закрытия/открытия вкладки.
+
+
+--- Frameworks Libraries ----------------------------------------
+Что необходимо знать
+Framework Angular(Google):
+    - node.js
+    - TypeScript
+    - Webpack
+    - MVC
+    - Angular
+Library React(Facebook):
+    - node.js
+    - JSX
+    - Babel
+    - Webpack
+    - React
+Framework Vue.js:
+    - node.js
+    - Webpack
+    - Vue.js
+Library jQuery:
+    - jQuery
+
+
+=== jQuery ==================================================================
+устаревшая библиотека, написано много кода на ней
+1. подключаем
+2. используем
+
+// одинаковый смысл кода
+$(document).ready(() => console.log('jQuery ready'));
+document.addEventListener('DOMContentLoaded', () => console.log('js ready'));
+
+Базовые селекторы jQuery
+Шаблон              Описание
+--------------------------------------
+$("*")              все эл страницы
+$("img")            все эл по тегу
+$("#btn1")          эл по id
+$(".redStyle")      все эл по class
+$(".с1,.с2")        все эл по неск классам
+$(".cls", "div#id") все эл класса cls внутри div с id='id'
+$("a[atr]")         все ссылки с атр atr
+$("a[atr='val']")   все ссылки с атр и знач atr="val"
+$("a[atr^='red']")  все ссылки с атр и знач оканч на red
+$("a[atr$='red']")  все ссылки с атр и одно из знач = red
+$("a[atr~='red']")  все ссылки с атр и знач начинающ на red
+$("a[atr*='red']")  все ссылки с атр и знач имеет подстроку red
+$("a[atr|='red']")  все ссылки с атр и знач red, либо первое знач red
+
+
+Иерархические селекторы
+Шаблон                  Описание            
+-----------------------------------------------------------------------------------------
+$(".closed + .open")    все эл класса open идущие непосредственно  после эл класса closed
+$(".closed ~ .open")    все эл класса open идущие после эл класса closed на одном ур влож
+           
+Фильтры
+Фильтр              Описание
+--------------------------------------------------------------------------
+:eq(n)              n-й элемент выборки (нумерация начинается с нуля)
+:even               элементы с четными номерами
+:odd                элементы с нечетными номерами
+:first              первый элемент выборки
+:last               последний элемент выборки
+:gt(n)              все эл с номером, большим n
+:lt(n)              все эл с номером, меньшим n
+:header             все заголовки (h1, h2, h3)
+:not(селектор)      все эл, кот не соответствуют селектору
+
+:contains('text')   все эл, кот содержат текст text..
+:has('селектор')    все эл, кот содерж хотя бы один доч эл, соотв селектору
+:empty              все эл, кот не имеют дочерних элементов
+:first-child        все эл, кот являются первыми дочерними элементами в своих родителях
+:last-child         все эл, кот явл последними дочерними элементами в своих родителях
+:nth-child(n)       все эл, кот явл n-ными элементами в своих родителях (нумерация идет с единицы)
+:nth-child(even)    все эл, кот явл четными элементами в своих родителях (нумерация идет с единицы)
+:nth-child(odd)     все эл, кот явл нечетными элементами в своих родителях (нумерация идет с единицы)
+:only-child         все эл, кот явл единственными дочерними элементами в своих родителях
+:parent             все эл, кот имеют, как минимум, один дочерний элемент
+
+:button             все элементы button и элементы input с типом button
+:checkbox           все элементы checkbox
+:checked            все отмеченные элементы checkbox и radio
+:disabled           все элементы, которые находятся в неактивном состоянии
+:enabled            все элементы, которые находятся в активном состоянии
+:file               все элементы file (input type='file')
+:input              все элементы input
+:hidden             все скрытые элементы
+:password           все элементы password
+:radio              все элементы radio
+:reset              все элементы reset
+:selected           все отмеченные элементы option
+:submit             все элементы input с типом submit
+:text               все элементы input с типом text
+:visible            только видимые элементы
+
+example
+$("tr:even")                        все четные tr
+$("tr:contains('Капуста')")         все tr, содержащие текст Капуста
+$('#results:odd:has('img')')        все нечетные элементы с id="results", которые содержат элементы img
+$('.cls:first').hover(function() {  берем 1-ый эл с классом cls и назначаем событие 'hover'
+    $(this).toggleClass('active')   $(this) - это сам элемент, тоглим ему класс
+}); 
+$('.cls:eq(2)').click(function() {  берем 3-ый эл с классом cls и назначаем событие 'click'
+    $('.image:even').hide();        скрыть все четные эл класса image           
+}); 

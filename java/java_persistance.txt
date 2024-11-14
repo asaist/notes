@@ -1,0 +1,1047 @@
+Общие понятия
+Entity - Entity это легковесный хранимый объект бизнес логики (persistent domain object).
+Основная программная сущность это entity класс, который так же может использовать 
+дополнительные классы, который могут использоваться как вспомогательные классы или 
+для сохранения состояния еntity.
+
+DTO (Data Transfer Object) - это объект, который используется для передачи данных
+между слоями приложения или между различными приложениями. Он содержит только 
+необходимую информацию для передачи и обычно не содержит методов работы с данными.
+DTO обычно используются для уменьшения количества данных, которые нужно передавать
+по сети, и для повышения производительности.
+
+POJO (Plain Old Java Object) - это простой Java-объект, который не зависит от 
+какой-либо специфической технологии или фреймворка. POJO представляет простой 
+контейнер для данных, не имеет специальной логики и не наследуется от каких-либо 
+специальных классов. POJO обычно используются для абстракции данных и повышения 
+гибкости и переносимости кода.
+
+ORM (Object-Relational Mapping) - маппинг Java-объектов на SQL-запросы. 
+Преобразование объекта в строку в таблице и обратное преобразование.
+Каждой таблице в базе данных должен соответствовать какой-то класс в Java-приложении.
+В Java приложении мы оперируем объектами, а эти объекты уже умеют сами сохранять 
+себя в базу данных.
+
+JPA (Java Persistence API) - Это именно спецификация. Она описывает, как все должно 
+работать и какими аннотациями нужно отмечать различные части класса, если мы хотим, 
+чтобы его объекты сохранялись в базу данных.
+
+
+===========================================================================
+
+JDBC
+--- Basic ---
+    Java Database Connectivity
+    Работа Java с различными СУБД.
+
+    Driver          - сущность(класс) необходимая для соединения Java с БД,
+                      для разный СУБД свой драйвер.
+    DriverManager   - класс с помощью которого выбирается драйвер
+    // драйвер(например postgres) можно загрузить с пом maven pom.xml:
+    <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>42.3.6</version>
+    </dependency>
+    // далее загрузим этот класс в JVM с пом загрузчика:
+    Class.forName("org.postgresql.Driver");         // загрузка класса загрузчиком
+    Class.forName(className, true, currentLoader);  // эквивалент того что выше
+
+    В JDBC есть 3 основных интерфейса:
+    Connection  - отвечает за соединение с базой данных
+    Statement   - отвечает за запрос к базе данных
+    ResultSet   - отвечает за результат запроса к базе данных
+
+    --- Полный цикл ---------------------------------------------------
+    -- подключение к PostgreSQL с помощью JDBC
+    Connection conn = DriverManager.getConnection(
+                "jdbc:postgresql://192.168.0.104:5432/mydb",    // url
+                "user",                                         // user
+                "password");                                    // password
+    url - jdbc:protocol://IP:port/db_name
+
+    -- запрос к БД
+    Statement stmt = conn.createStatement();   // создать запрос
+    
+    -- выборка данных executeQuery()
+       возвращает собственно данные по запросу в виде ResultSet
+    ResultSet res = stmt.executeQuery("SELECT * FROM my_table;");
+    
+    -- изменение данных executeUpdate()
+       возвращает целое число - кол-во измененных строк
+       DML:INSERT/UPDATE/DELETE; DDL:CREATE/ALTER/DROP
+    stmt.executeUpdate("INSERT INTO my_table (name, score) VALUES ('Lisa', 35);");
+
+    -- обработка результата - можно получать любой тип данных (getTimestamp())
+    while (resultSet.next()) {  // похож на Iterator
+        int id = resultSet.getInt(1);               // выбираем поля по порядк номеру       
+        String name = resultSet.getString("name");  // либо выбираем поля по имени
+    }
+
+    -- закрываем все по порядку
+    stmt.close();
+    conn.close();
+    -------------------------------------------------------------------------
+
+    -- PreparedStatement 
+    Statement: используется для простых случаев запроса без параметров.
+    PreparedStatement позволяет:
+        Заранее подготовить запрос с указанием мест, где будут подставляться параметры
+        Установить параметры определенного типа и выполнить после этого запрос с уже 
+        установленными параметрами
+    // запрос с указанием мест для параметров в виде знака "?"
+    String sql = "INSERT INTO students (name, score) VALUES (?, ?);"
+    PreparedStatement pstms = connection.prepareStatement(sql); // создать запрос
+    // использование с нашими параметрами - типы разнообразные
+    pstms.setString(1, "Bob");                                  // set params
+    pstms.setInt(2, 50);
+    pstms.executeUpdate();                                      // выполнить запрос,
+                                                                   без параметров
+    -- CallableStatement
+    Используется для вызова (Call) хранимых процедур в базе данных
+    CallableStatement cstmt = Connection.prepareCall();         // создать запрос
+    могут возвращать значения в отличие от PreparedStatement
+
+    -- Транзакции
+    По умолчанию AutoCommit у объекта Statement = true
+    Можно отключить AutoCommit и обрабатывать транзакции вручную
+    Если автокоммит не отключить то на каждую вставку строки - одна транзакция,
+    выходит во много раз дольше. 80000мс против 44мс
+    // пример транзакции вручную
+    connection.setAutoCommit(false);    // отключить автокоммит
+    for (int i = 0; i < 10000; i++) {
+        pstms.setString(1, "Bob" + i);
+        pstms.setInt(2, 50 + i % 10);
+        pstms.executeUpdate();
+    }
+    connection.commit();                // завершение транзакции
+    connection.rollback();              // откат транзакции
+
+    Savepoint - точка сохранения состояния базы, позволяет откатиться к этой точке
+    Savepoint sp1 = connection.setSavepoint();  // create
+    connection.rollback(sp1);                   // откат транзакции к точке
+
+    -- Batching запросов
+    когда необходимо сделать очень много однотипных запросов,
+    можно повысить Производительность
+    // пример транзакции вручную + Batching
+    connection.setAutoCommit(false);    // отключить автокоммит
+    for (int i = 0; i < 10000; i++) {
+        pstms.setString(1, "Bob" + i);
+        pstms.setInt(2, 50 + i % 10);
+        pstms.addBatch();               // помещаем в буфер
+    }
+    pstms.executeBatch();               // выполняем все запросы разом
+    connection.commit();                // завершение транзакции
+
+    -- Example
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        try (Connection connection = DriverManager.getConnection(
+                "jdbc:postgresql://localhost:5432/mydb", 
+                "myuser",                                    
+                "password"); 
+            Statement statement = connection.createStatement()) {
+            ResultSet set = statement.executeQuery("SELECT name, size FROM celebrities;");
+            while (set.next()) {
+                System.out.println(set.getString("name") + set.getInt("size"));
+            }
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+=====================================================================================
+
+Hibernate
+--- Hibernate basic ---
+    Hibernate - это ORM, framework, коткоторый осуществляет CRUD между Java obj и DB.
+    Hibernate - реализация спецификации JPA плюс свои фишки, совпадает на 95%.
+    Использует для работы с БД под капотом JDBC.
+        Java App <===> Hibernate <===> JDBC <===> Database
+
+    CRUD
+    CREATE  - INSERT
+    READ    - SELECT
+    UPDATE  - UPDATE
+    DELETE  - DELETE
+    
+    Плюсы Hibernate:
+    Предоставление технологии ORM
+        class Animal {                              animal(table)
+            int id;         <==> Hibernate <==>     INTEGER id
+            String name;                            VARCHAR(..) name
+            int age;                                INTEGER age
+            ...                                     ...
+        }
+    Регулирование SQL-запросами. Нет нужды писать SQL-запросы.
+        save() --> Hibernate --> INSERT INTO table ...;
+        get()  <-- Hibernate <-- SELECT ...; возвращает объект Java;
+    Меньшее кол-во кода по сравнению JDBC.
+
+
+--- Maven dependencies ---
+    Подключить Hibernate with Maven:
+    <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-core -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>6.1.0.Final</version>
+    </dependency>
+    
+    Подключить JDBC драйвер(например postgres):
+    <!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+    <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>42.4.0</version>
+    </dependency>
+
+
+--- Configuration SessionFactory / EntityManagerFactory ---
+    Все настройки конфигурации делятся на 3 группы:
+    1. Тип СУБД
+        - Указываем диалект (тип СУБД), например, Oracle 9.0
+        - Указываем имя JDBC-драйвера для работы с данной СУБД
+    2. Указываем данные для авторизации в базе
+        - url базы
+        - username
+        - password
+    3. Конфигурируем движок Hibernate
+        - dialect  - использовать фичи версии СУБД
+        - show_sql - вывод в консоль всех запросов
+
+    Способы которыми можно сконфигурировать Hibernate:
+        1 - JPA-standart с пом файла META-INF/persistence.xml - получим EntityManagerFactory
+        2 - Hibernate API с пом класса Configuration, весь конфиг в коде - получим SessionFactory
+        3 - Hibernate API с пом класса Configuration, с пом файла hibernate.properties - получим SessionFactory
+        4 - Использовать методы бина Configuration(Spring)
+
+    persistence.xml
+    --------------------------------------------------------------------
+    <persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="2.0">
+
+        <persistence-unit name="example">                   # набор сущностей и настроек для фабрики
+            <class>org.hibernate.example.Book</class>       # классы(можно не указывать, находит сам все @Entity)
+            <class>org.hibernate.example.Author</class>
+            <properties>                                    # настройки Postgres/Hibernate/SQL
+                <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost/example"/>
+                <property name="jakarta.persistence.jdbc.user" value="gavin"/>
+                <property name="jakarta.persistence.jdbc.password" value="hibernate"/>
+                <property name="hibernate.show_sql" value="true"/>
+                <property name="hibernate.format_sql" value="true"/>
+                <property name="hibernate.highlight_sql" value="true"/>
+            </properties>
+        </persistence-unit>
+    </persistence>
+
+    hibernate.properties
+    --------------------------------------------------------------------
+    hibernate.dialect= org.hibernate.dialect.Oracle9Dialect
+    hibernate.connection.driver_class= oracle.jdbc.driver.OracleDriver 
+    hibernate.connection.url= jdbc:oracle:thin:@localhost:1521:supershop
+    hibernate.connection.username=root
+    hibernate.connection.password=secret
+    hibernate.show_sql=true
+
+
+
+
+--- Comparison SessionFactory / EntityManagerFactory ---
+    SessionFactory          - создается один раз при запуске приложения, применяет конфигурации
+                              и используется для создания сессий Hibernate
+    Session                 - используется для CRUD операций с БД
+    EntityManagerFactory    - создается один раз при запуске приложения, применяет конфигурации
+                              и используется для создания менеджеров EntityManager
+    EntityManager           - управляет жизненным циклом entity и выполняет CRUD операции                      
+    
+    EntityManagerFactory and EntityManager  - соответствует стандату JPA
+    SessionFactory and Session              - Hibernate специфика(доп фичи)
+    Конвертация Session из EntityManager
+    Session session = entityManager.unwrap(Session.class);
+
+
+--- Использование конфигурации ---
+    1. конфигурация с помощью hibernate.properties или кастомного .properties
+    SessionFactory sessionFactory = new Configuration().buildSessionFactory();
+
+    ClassLoader classLoader = Thread.currentThread().getClassLoader();
+    Properties properties = new Properties();
+    properties.load(classLoader.getResourceAsStream("hibernate.properties"));
+    SessionFactory sessionFactory = new Configuration()
+                .addProperties(properties)              // кастомный .properties
+                .addPackage("com.javarush.data")        // пакет с entity
+                .buildSessionFactory();
+
+    2. конфигурация с помощью hibernate.cfg.xml или кастомного .xml
+    SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+    SessionFactory sessionFactory = new Configuration()
+                .configure("hibernate-dev.cfg.xml")     // кастомный .xml
+                .addPackage("com.javarush.data")        // пакет где искать entity
+                .buildSessionFactory();
+
+    3. конфигурации в коде с пом SessionFactory
+    Properties properties = new Properties();                       // спец класс Hibernate
+    properties.put(Environment.DRIVER, "org.postgresql.Driver");    // конфиги
+    properties.put(Environment.URL, "jdbc:postgresql://localhost:5432/mydb");
+    properties.put(Environment.DIALECT, "org.hibernate.dialect.PostgreSQL10Dialect");
+    properties.put(Environment.USER, "root");
+    properties.put(Environment.PASS, "password");
+    properties.put(Environment.SHOW_SQL, true);
+    SessionFactory sessionFactory = new Configuration()             // применяем конфиг
+                .setProperties(properties)
+                .addAnnotatedClass(Person.class)                    // указать классы
+                .buildSessionFactory();
+    
+    4. конфигурации в коде с пом EntityManagerFactory
+    EntityManagerFactory managerFactory = Persistence               // применяем конфиг из persistence.xml
+                .createEntityManagerFactory("example");             // имя persistence-unit
+    // Можно переопределить часть конфига в мэп, а остальной в persistence.xml
+    Map<String, String> properties = new HashMap<>();               // мэпка с конфигом
+    properties.put("hibernate.connection.url", "jdbc:mysql://localhost:3306/supershop");
+    properties.put("hibernate.connection.driver_class", "com.mysql.jdbc.Driver");
+    properties.put("hibernate.dialect", "org.hibernate.dialect.DerbyDialect");
+    properties.put("hibernate.default_schema", "APP");
+    properties.put("hibernate.connection.username", "nbuser");
+    properties.put("hibernate.connection.password", "12345");
+    EntityManagerFactory managerFactory = Persistence               // применяем конфиг
+                .createEntityManagerFactory("example", properties); // + кидаем мэпку
+
+
+--- Session / EntityManager ---
+    В Hibernate существует два способа получения объекта Session и 1 способ EntityManager
+    getCurrentSession   - возвращает текущую сессию для данного контекста,
+                          если текущей сессии нет, то Hibernate создает новую сессию
+                          и связывает ее с текущим контекстом
+                          Жизненный цикл сессии управляется автоматически, закрывается 
+                          после завершения транзакции
+    openSession         - создает новую сессию каждый раз, когда он вызывается.
+                          Управление жизненным циклом сессии вручную.
+    createEntityManager - аналогичен методу openSession() в Hibernate. Он создает новый 
+                          экземпляр EntityManager, кот должен быть закрыт после использ
+
+
+--- Mapping class-table ---
+    Необходимые составляющие Entity класса:
+    @Entity         - класс объекты которого нужно хранить в базе данных
+    @Table          - связь класса с таблицей, аттрибуты:
+                      name      - String, имя таблицы, если совпадает можно опустить
+    @Column         - настройки поля класса и связь его с полем таблицы:
+                      name      - String, имя колонки таблицы для поля класса(если имена
+                                  совпадают можно опустить)
+                      unique    - boolean, все значения поля должны быть уникальны
+                      nullable  - boolean, поле может принимать значение null
+                      length    - int, максимальная длина (для строк)
+                      insertable- bollean, не инсертить
+                      updatable - boolean, не апдейтить
+    @Id             - первичный ключ, задавать обязательно над полем класса
+    @GeneratedValue - автоинкремент первичного ключа, размещаем под @Id,
+                      можно указать по каким правилам идет автоинкремент с пом аттрибута:
+                      strategy  - стратегия автоинкремента:
+                      GenerationType.IDENTITY - автоинкремент по правилам БД (лучший выбор)
+                      GenerationType.SEQUENCE - полагается на работу Sequence, созданного в БД
+                      GenerationType.TABLE    - полагается на знач столбца таблицы БД(плох выбор)
+                      GenerationType.AUTO     - автовыбор - лучше не ставить
+    Плюс должен быть конструктор по умолчанию и геттеры-сеттеры на все поля
+
+
+--- Жизненный цикл Hibernate Entity-объектов ---
+    Состояния:
+    Transient   - (прозрачный) новый созданный POJO, не влияет ни на что
+                  id не присваиваем - должен быть null
+                  Client <==> POJO
+    Persistent  - объекты, связанные с Hibernate, 2 способа получить:
+                    - загрузить объект из Hibernate
+                    - сохранить объект в Hibernate
+                  Client <==> POJO <==> Session <==> DB +--+ POJOTable
+    Detached    - объект был отсоединен от сессии, закрылась сессия, либо 
+                  завершилась транз, Hiber больше не следит за объектом. 
+                  session.close();          // закрылась сессия
+                  session.evict(entity);    // явно отсоединить объект
+                  Client <==> POJO  DB +--+ POJOTable
+    Removed     - состояние объекта, на котором вызван метод remove()
+                  запись из BD удалена, Java-объект перех в это состояние
+                  session.remove(employee); // у объекта состояние Removed
+                  Client <==> POJO
+    
+    Employee employee = session.load(Employee.class, 1);    // Persisted
+    session.remove(employee);                               // Removed
+    session.persist(employee);                              // Persisted
+    session.close();                                        // Detached
+    employee = session.merge(employee);                     // Persisted
+    Employee emp = new Employee();                          // Transient
+    session.persist(emp);                                   // Persisted
+
+    Когда объект Persisted можно менять его поля у Java объекта и 
+    автоматически поменяется значение в записи БД
+                    
+
+                                         Detached
+                                          ^   |
+                                detach()  |   |
+                                evict()   |   | merge()
+                                clear()   |   | update()
+                                close()   |   |
+                                          |   |                           D
+                            persist()     |   v     find() get() load()   a
+    New POJO --> Transient -----------> Persistent <--------------------- t
+                            save()        |   ^  \----------------------> a
+                                          |   |           flush()         b
+                                          |   | persist()                 a
+                                 remove() |   | save()             +----> s
+                                          v   |                    |      e
+                                         Removed ------------------+
+                                                       flush()
+
+
+--- Transaction/Транзакции ---
+    Hibernate транзакция это JDBC транзакция
+    Транзакция - руппа действий, которые должны быть выполнены только все вместе
+    Если Hibernate выполняет запрос на получение данных, то явно транзакцию открывать не нужно
+    Hibernate сам это сделает, если посчитает нужным: у него есть его настройки, 
+    а также настройки SQL-сервера.
+    Для остальных операций открываем-закрываем транзакции вручную:
+    Transaction transaction = session.beginTransaction();   // открыть транзакцию
+    Transaction transaction = em.beginTransaction();   // открыть транзакцию
+    session.persist(obj);                                   // какие-то действия
+    transaction.commit();                                   // выполняем транзакцию
+    // transaction.rollback();                              // либо откатываем
+
+
+
+    Методы Transaction:
+    begin()	                    Стартует новую транзакцию
+    commit()	                Заканчивает транзакцию, пушит/комитит все изменения
+    rollback()	                Откатывает текущую транзакцию
+    setTimeout(int seconds)     Устанавливает максимальное время выполнения транзакции
+    isActive()	                Проверяет активная транзакция или нет
+    wasRolledBack()             Проверяет нормально ли откатилась транзакция
+    wasCommitted()	            Проверяет нормально ли транзакция закомитилась
+    registerSynchronization()	Регистрирует callback для контроля транзакции
+
+    // example
+    Session session = sessionFactory.openSession();
+    Transaction transaction = session.getTransaction();
+    try {
+        transaction.begin();
+        Long count = session.createQuery("select count(*) from Employee", Long.class).uniqueResult();
+        transaction.commit();
+    }
+    catch (Exception e) {
+        if (transaction.getStatus() == ACTIVE || transaction.getStatus() == MARKED_ROLLBACK) {
+        transaction.rollback();
+        }
+    }
+    finally {
+        session.close();
+        sessionFactory.close();
+    }
+
+
+--- HQL (Hibernate Query Language) ---
+    это SQL переделанный под написание запросов в Hibernate для удобства
+    Вместо имени таблицы используется имя entity класса, 
+    вместо полей БД используются именя полей класса
+    
+    Native                                            | HQL
+    --------------------------------------------------+---------------------------------------
+    SELECT * FROM employee                            | FROM Employee
+    SELECT * FROM employee WHERE first_name = 'Inna'; | FROM Employee WHERE firstName = 'Inna'
+    SELECT name FROM employee;                        | SELECT name FROM Employee
+    UPDATE employee SET salary = 0;                   | UPDATE Employee SET salary = 0;
+    DELETE employee WHERE first_name='Inna'           | DELETE Employee WHERE firstName='Inna'
+    WHERE field IS NOT TRUE;                          | WHERE field IS NULL OR field IS FALSE;
+    WHERE actual                                      | actual IS NOT NULL AND actual IS TRUE
+    ...JOIN employee ON task.employee = employee.id;  | FROM Task WHERE employee.name = 'Igor'
+    ...JOIN employee ON task.employee = employee.id;  | SELECT employee FROM Task where id = 2
+    в джоинах обращаемся к полям связной таблицы через точку
+
+
+--- JPQL (Jakarta Persistence Query Language) ---
+    платформенно-независимый объектно-ориентированный язык запросов, являющийся частью 
+    спецификации Java Persistence API (JPA)
+    
+    Native                                            | JPQL
+    --------------------------------------------------+---------------------------------------
+    SELECT * FROM employee                            | SELECT e FROM Employee e
+    SELECT * FROM employee WHERE first_name = 'Inna'; | SELECT e FROM Employee e WHERE e.firstName = 'Inna'
+    SELECT name FROM employee;                        | SELECT e.name FROM Employee e
+    UPDATE employee SET salary = 0;                   | не поддерживается
+    DELETE employee WHERE name='Inna'                 | DELETE FROM Employee e WHERE e.id = :id
+    WHERE field IS NOT TRUE;                          | WHERE field IS NULL OR field IS FALSE;
+    WHERE actual                                      | actual IS NOT NULL AND actual IS TRUE
+    ...JOIN employee ON task.employee = employee.id;  | SELECT t FROM Task t JOIN t.employee e (авто связь)
+                                                      |     WHERE e.id IN = :idList;
+
+
+--- CRUD with Hibernate ---
+    Query - интерфейс, с помощью которого получаем запрос к БД имеет множество реализаций,
+    которые возвращаются различными методами класса Session:
+        Query<Employee> query = session.createQuery("from Employee", Employee.class);
+        query = session.createNamedQuery("Person_GetById", Person.class);
+        query = session.createNativeQuery("SELECT * FROM employee", Employee.class);
+
+    Для обработки запроса Query имеет различные методы:
+        query.getResultList();      // (JPA) получить все записи выборки из таблицы
+        query.list();               // получить все записи выборки из таблицы
+        query.getSingleResult();    // (JPA) 1 запись из таблицы
+        query.uniqueResult();       // 1 запись из таблицы
+        query.getResultStream();    // все записи в виде потока(стрима)
+        query.executeUpdate();      // выполнить запрос на изменение БД(не SELECT)
+        query.scroll();             // позволяет перемещаться по списку результатов
+    
+    Подстановка параметров:
+    // именованные параметры
+    session.createQuery("DELETE Employee WHERE name = :name AND age = :age")
+            .setParameter("name", myName)   // ---------^              ^
+            .setParameter("age", myAge)     // ------------------------+
+    // вхождение в список IN
+    session.createQuery("FROM Entity WHERE id IN (:idList)")
+            .setParameterList("idList", myIdList)
+
+    SELECT:
+    // явно транзакцию открывать не нужно, Hibernate сам откроет если нужно
+    // выбрать все записи в список
+    Query<Person> query = session.createQuery("FROM Person", Person.class); // запрос SELECT *
+    List<Person> people = query.list();                                     // результат
+    List<Person> people = query.getResultList();                            // результат JPA std
+
+    // выбрать 1 запись по id (find и getSingleResult - стандарт JPA)
+    person = session.find(Person.class, id);    // (JPA)вернет объект или null если нет записи
+    
+    // выбрать с фильтром по другому полю
+    person = session.createQuery("FROM Person WHERE name = :name", Person.class)
+                .setParameter("name", name).getResultList();
+
+    // выбрать отдельное поле(можно с distinct)
+    List<String> names = session.createQuery("SELECT name FROM Person", String.class)
+                ..getResultList();
+
+    // выбрать DTO
+    List<PersonDTO> dtos = session.createNativeQuery(
+        "SELECT p.id as \"id\", p.name as \"name\" FROM Person p")          // следим за именами
+        .setResultTransformer(Transformers.aliasToBean(PersonDTO.class))    // используем маппинг
+        .list();
+
+    // LIMIT OFFSET
+    query.setFirstResult(10);   // аналог OFFSET
+    query.setMaxResults(1);     // аналог LIMIT
+    query.getResultList();      // далее делаем выборку
+    
+    INSERT:
+    Transaction transaction = session.beginTransaction();
+    session.persist(person);                        // инсертит новую запись в связанную таблицу
+    transaction.commit();                           // выполняем транзакцию и саму вставку
+
+    UPDATE:
+    Transaction transaction = session.beginTransaction();
+    session.merge(person);                          // обновить запись, возвращ обновленный obj
+    transaction.commit();
+
+    REMOVE:
+    Transaction transaction = session.beginTransaction();
+    session.remove(person);                                 // удалить из базы связанную запись
+    session.createQuery("delete from User where id = :id")  // либо так через запрос
+        .setParameter("id", user.getId())          
+        .executeUpdate();                                   // executeUpdate() выполнить
+    transaction.commit();
+    
+
+--- Comparison CRUD methods ---
+    // сравнение методов session/entityManager
+    get()       - вернет объект или null если нет записи
+    find()      - (JPA)вернет объект или null если нет записи
+    load()      - возвращает proxy объект, лучше не юзать
+    flush()     - принудительно вызвать SQL команду и вызов триггеров
+                  обнаруживает изменения в контексте сессии и обновляет БД
+                  замена transaction.commit() - если что-то делаем вне транзакции
+    refresh()   - обновляет существующий объект на основе БД
+                  полезно перечитать объект из базы, если есть вероятность, что он изменился
+                  после обработке в самой БД различными триггерами/процедурами
+    save()      - лучше использовать persist()
+                  не требует транзакции, сохраняет или обновляет объект в базе данных
+                  если объект Transient - инсертит новую запись
+                  если у объекта уже есть идентификатор - обновится объект
+                  Возвращает Serializable, id строки(тип id по спецификации может быть любым)
+    persist()   - (JPA) инсертит новую запись согласно объекту, требует активной транзакции,
+                  не работает с Detached объектами, объект не должен иметь id (Transient)
+                  После выполнения persist() объекту автоматом присваивается id
+    update()    - обновляет запись в бд уже существующего объекта, не меняет текущий объект
+                  работает только с Persisted и Detached объектами
+                  не возвращает ничего 
+    merge()     - (JPA)также обновляет запись в бд объекта, не меняет текущий объект
+                  Может работать с Transient(без id) объектами - создает новую запись - persist()
+                  Может работать с Detached объектами - обновляет запись
+                  возвращает измененный объект
+    saveOrUpdate- Обновить существующий объект, либо создать новый, если объект Transient
+                  всегда используют вместо методов save() и update(), но лучше исп merge()
+    remove()    - (JPA) удаляет запись из БД, сам объект не меняется, не возвращает значения
+                  можно использовать как внутри, так и вне транзакции
+    delete()    - удаляет запись из БД, сам объект не меняется, возвращает удаленную сущность 
+                  или null если сущность не найдена, требует наличия активной транзакции
+
+
+--- SQL Injection ---
+    Атака на веб-приложение, которая позволяет злоумышленнику внедрять 
+    вредоносный SQL-код в запросы к базе данных
+
+    Правильный подход добавлять переменные в виде параметров:
+    String hql = "from EmployeeTask where employee.name = :username";   // правильно
+    Query<EmployeeTask> query = session.createQuery( hql, EmployeeTask.class);
+    query.setParameter("username", "Иван Иванович");                    // правильно
+
+    Нельзя склеивать запрос из нескольких частей !!!
+    String hql = "from EmployeeTask where employee.name = " + myName;   // так делать нельзя!
+    Query<EmployeeTask> query = session.createQuery( hql, EmployeeTask.class);
+    Потому что в myName может попасть не ожидаемая строка, например
+    myName = "'Иван;' DROP TABLE user;";    // удалит еще и таблицу user
+
+
+--- Named Queries ---
+    Hibernate позволяет хранить именованные запросы в виде аннотаций, можно обращаться к ним из кода
+    Аннотации можно добавить перед любым Entity-классом: имена запросов не привяз ни к какому Entity
+
+    @org.hibernate.annotations.NamedQueries({                   // список запросов
+            @org.hibernate.annotations.NamedQuery(              // 1 именов запрос
+                    name = "Person_GetById",                    // имя запроса
+                    query = "FROM Person WHERE id = :id"),      // SQL запрос
+            @org.hibernate.annotations.NamedQuery(              // 2 именов запрос
+                    name = "Person_GetByName",
+                    query = "FROM Person WHERE name = :name",
+                    timeout = 1,                                // доп параметры
+                    fetchSize = 10,
+                    cacheable = true,
+                    cacheMode = CacheModeType.GET)
+    })
+
+    // использование в коде, просто вместо стринг запроса используем имя запроса
+    session.createNamedQuery("Person_GetById", Person.class).setParameter("id", id).getSingleResult();
+
+
+--- NativeQuery ---
+    Нативные запросы на SQL
+
+    // так же можно хранить именованные запросы на SQL
+    @org.hibernate.annotations.NamedNativeQueries(
+            @org.hibernate.annotations.NamedNativeQuery(name = "Employee_GetAll",
+                    query = "select * from employee",
+                    resultClass = Employee.class)
+    )
+
+    // использование, получаем объект запроса NativeQuery(можно Query) и обрабатываем результат
+    NativeQuery<Employee> query = session.createNativeQuery("select * from employee", Employee.class);
+    List<Employee> resultLIst = query.list();   // те же методы обработки что и для Query
+
+    // можно получить также похожий на JDBC ResultSet
+    List<Object[]> persons = session.createNativeQuery("SELECT id, name FROM Person").getResultList();
+    for(Object[] person : persons) {        
+        Number id = (Number) person[0];     // как в JDBC маппим вручную
+        String name = (String) person[1];
+    }
+
+
+--- DTO mapping ---
+    Маппинг результата не Entity-классов, у DTO нет никаких аннотаций, и связ таблиц
+    Имена колонок в SQL-запросе должны точно совпадать с именами полей DTO класса
+    
+    public class PersonDTO {    // DTO
+        private String name;
+        private Integer age;
+        // ... getters, setters + default constructor
+    }
+    List<PersonDTO> dtos = session.createNativeQuery(
+        "SELECT p.id as \"id\", p.name as \"name\" FROM Person p")          // следим за именами
+        .setResultTransformer(Transformers.aliasToBean(PersonDTO.class))    // используем маппинг
+        .list();
+
+    Также можно просто вытащить запрос по entity и стримом смапить на DTO
+
+
+--- DAO (Data Access Object) ---
+    DAO - объект для работы с БД
+
+    Best practices:
+    Допустим у нас много сущностей и чтобы создать под каждую сущность 
+    свой DAO + Service нужно много написать, но можно сократить код:
+    1. Создадим единый абстрактный класс для всех DAO с обобщ методами:
+        T getById(final long id)	            Получить объект по его id
+        List<T> getAll()	                    Получить все объекты данного типа
+        int getCount()	                        Узнать количество объектов
+        T save(final T entity)	                Сохранить объект в базу
+        T update(final T entity)	            Обновить объект в базе
+        void delete(final T entity)	            Удалить объект из базы
+        void deleteById(final long entityId)    Удалить объект из базы по id
+       
+        abstract public class BaseDAO<T> {
+            private final Class<T> clazz;                   // класс entity
+            private final SessionFactory sessionFactory;    // фабрика
+
+            protected BaseDAO(Class<T> clazz) {             // конструктор принимает класс
+                this.clazz = clazz;
+                this.sessionFactory = HibernateUtil.getSessionFactory();
+            }
+
+            public List<T> findAll() {                      // метод найти все записи
+                List<T> list = null;
+                try (Session session = sessionFactory.openSession()){
+                    Query<T> query = session.createQuery("FROM " + clazz.getSimpleName(), clazz);
+                    list = query.getResultList();
+                } catch (Exception ex)
+                    log.severe(ex.getMessage());
+                return list;
+            }
+            
+            // остальные методы
+        }
+    2. Далее создаем DAO и экстендимся от базового, если нужно добавляем свои методы
+        public class PersonDAO extends BaseDAO<Person> {
+            private static PersonDAO personDAO;
+
+            private PersonDAO() {
+                super(Person.class);
+            }
+
+            public static PersonDAO getInstance() {
+                if (personDAO == null) {
+                    personDAO = new PersonDAO();
+                }
+                return personDAO;
+            }
+        }
+    3. Так же с сервисами - создаем абстрактный сервис
+    4. Создаем собственно сервисы наследуемся от базового сервиса
+
+
+--- Entity Annotations ---
+    @Column(name = "gen_uuid" , insertable = false, updatable = false )
+    private UUID gen_uuid;              // не инсертить и не обновлять(генерирует база)
+
+    @Transient                          // игнорируемое поле - не свзывается с БД
+    public Integer total;
+
+    @Formula(value = " wid * height ")  // игнорируемое поле - при чтении из БД
+    public Integer total;                  значение вычисляется на лету
+
+    @Temporal(TemporalType.TIMESTAMP)   // для старых типов дат(Date, Time)
+    @CreationTimestamp                  // временная отметка созд при созд записи
+    @UpdateTimestamp                    // обновляемая отметка времени
+    
+    @Basic                              // поле должно быть обработано автоматически
+    @Basic(optional = false)            // поле не должно быть равно null
+
+    @Lob                                // в поле хранится Large Object
+	@Column(name = "photo", columnDefinition="BLOB")    // как сохранить в базе
+    private byte[] photo;                               // документ, картинка
+
+    @NotFound(action = NotFoundAction.IGNORE)   // можно ставить над колонками ManyToOne
+                                                   для предотвращения ошибок
+
+    Валидаторы, можно создавать свои - @Constraint
+    @Email
+    @NotNull
+    @Size(min=1, max=9)
+
+    @Version    // Оптимистическое управление параллельным доступом
+
+
+--- Связь на уровне таблиц ---
+    четыре вида отношений:
+    1. One-to-One      - один к одному      - аннотация @OneToOne
+    2. One-to-Many     - один ко многим     - аннотация @OneToMany
+    3. Many-to-One     - многие к одному    - аннотация @ManyToOne
+    4. Many-to-Many    - многие ко многим   - аннотация @ManyToMany
+
+    настройка типов отношений в Hibernate(В БД все одинаково всегда):
+    Uni-directional associations    - отношения когда одна сторона не знает о них
+                                      допустим настроить только @ManyToOne или 
+                                      настроить только @OneToMany
+    Bi-directional associations     - обе стороны имеют ссылки друг на друга
+                                      @ManyToOne настроено на одной таблице
+                                      @OneToMany настроено на другой талице
+
+    отношение      | тип выборки   | инфо
+    ---------------+---------------+------------------------------------------
+    One-to-One     | Eager         | одна запись - нетелпеливая - легко
+    One-to-Many    | Lazy          | может быть много связей - поэтому ленивая
+    Many-to-One    | Eager         | одна связь - нетерпеливая - просто
+    Many-to-Many   | Lazy          | может быть много связей - поэтому ленивая
+
+    исправление ошибки ERROR: target lists can have at most 1664 entries
+    поставить @ManyToOne(fetch = FetchType.LAZY) на тяжёлом поле
+    либо в пропертях spring.jpa.properties.hibernate.enable_lazy_load_no_trans=true
+
+
+--- Many-To-One / One-To-Many ---
+    Примеры таблиц:
+        employee:                   task:
+        +---------------+           +-----------------+
+        | id serial(PK) + <--+      | id serial       |
+        | name varchar  |    |      | name varchar    |
+        | age int       |    +------+ employee int(FK)|
+        +---------------+           +-----------------+
+        One-To-Many                 Many-To-One
+
+    Определение:
+    много записей таблицы Task могут ссылаться на 1 запись таблицы Employee
+
+    Можно настроить как одностороннюю связь так и двустороннюю, т.е можно
+    определить @ManyToOne либо @OneToMany либо сразу обе для двустрон связи,
+    в базе все остается преждним, связь от этого не меняется
+
+    // class Task, поле - внешний ключ на объект Employee
+    // во втором классе Employee можно не объявлять связь OneToMany
+    @ManyToOne()                        // много task ссылаются на 1 employee
+    @JoinColumn(name = "employee")      // имя колонки в task где хранится FK
+    private Employee employee;             на таблицу employee
+
+    Запросы с выборкой по 2-м таблицам и выводом инфо из одной таблицы:
+    // 1 список задач по имени работника 
+    SELECT t.* FROM task t JOIN employee e ON e.id = t.employee WHERE e.name = 'Ivan';
+    -- hql
+    String hql = "FROM Task WHERE employee.name = :username";
+    // 2 список сотрудников с просроченной задачей
+    SELECT DISTINCT employee.*
+    FROM task JOIN employee ON task.employee = employee.id
+    WHERE task.deadline < NOW();
+    -- hql
+    String hql = "SELECT DISTINCT employee FROM Task WHERE deadline < NOW()";
+    // Обновить задачи где работник null - заменить на директора
+    UPDATE task SET employee = 4 WHERE employee IS NULL;
+    -- hql
+    String hql = "UPDATE Task set employee = :user WHERE employee IS NULL";
+
+    // class Employee, поле - список всех task которые ссылаются на это поле
+    // во втором классе Task можно не указывать поле employee - тогда оно будет
+       считаться служебным и его значением будет управлять Hibernate
+    @OneToMany(cascade = CascadeType.ALL)   // на это поле ссылаются много task
+    @JoinColumn(name = "employee")          // в какой кол табл task находится FK   
+    private Set<Task> tasks = new HashSet<Task>();
+
+    Добавить работнику задачу:
+    Task task1 = new Task();                                // создаем задачку
+    task1.description = "Сделать что-то важное";
+    session.persist(task1);                                 // сохраняем
+    session.flush();                                        // инсертим
+    Employee director = session.find(Employee.class, 4);    // ищем employee
+    director.tasks.add(task1);                              // сохраняем ему 
+    session.merge(director);
+    session.flush();
+
+
+--- CascadeType ---
+    Управление каскадными операциями между связанными сущностями
+    Параметр cascade описывает, что должно происходить с зависимыми объектами, 
+    если мы меняем их родительский (главный объект)
+    ALL:        все операции (сохранение, обновление, удаление) выполняются каскадно
+                от родительской сущности к связанным сущностям. Если, например, вы 
+                сохраняете или удаляете родительскую сущность, все связанные с ней 
+                сущности также будут сохранены или удалены.
+    PERSIST:    операция сохранения выполняется каскадно от родительской сущности к 
+                связанным сущностям. Если вы сохраняете родительскую сущность, все 
+                связанные сущности также будут сохранены. Однако операции обновления 
+                и удаления не будут выполняться каскадно.
+    MERGE:      операция обновления (слияния) выполняется каскадно от родительской 
+                сущности к связанным сущностям. Если родительская сущность 
+                обновляется, все связанные сущности также будут обновлены.
+    REMOVE:     операция удаления выполняется каскадно от родительской сущности к 
+                связанным сущностям. Если родительская сущность удаляется, все 
+                связанные сущности также будут удалены.
+    REFRESH:    операция обновления (обновления из базы данных) выполняется каскадно 
+                от родительской сущности к связанным сущностям.
+    DETACH:     операция отсоединения (отсоединения от контекста сеанса) выполняется 
+                каскадно от родительской сущности к связанным сущностям.
+
+    Использование:
+    @OneToOne(cascade = CascadeType.ALL)                    // один каскад тайп
+    @ManyToMany(cascade = {CascadeType.PERSIST,             // множество, точная настройка
+                           CascadeType.MERGE})
+    @Cascade({ org.hibernate.annotations.CascadeType.ALL }) // отдельная аннотация
+
+
+--- One-to-One ---
+    Uni
+    Employee --> Details(детали не знают о существовании Employee)
+
+    // Поле 'details_id' в табл employees которое является внешним ключем на
+       поле 'id' таблицы details.
+    // Добавим в класс Employee поле - внешний ключ на Detail(табл details)
+    // Естесственно в БД должны быть соотв таблицы и настроенный связи.
+    @OneToOne(cascade = CascadeType.ALL)// тип отношений, cascade -типа как в БД
+                                        // при del/upd в связ таблице тоже удал
+    @JoinColumn(name = "details_id")    // столбец кот осущ связь с др таблицей
+    private Detail empDetail;           // тип - класс кот связан с др таблицей
+
+    public static void main(String[] args) {
+        try(SessionFactory factory = new Configuration()
+                .configure("hibernate.cfg.xml")
+                .addAnnotatedClass(Employee.class)
+                .addAnnotatedClass(Detail.class)    // добавим еще класс
+                .buildSessionFactory()); 
+            Session session = factory.getCurrentSession() {
+            
+            Employee emp = new Employee("Ivan", "Bond", "IT", 750);
+            Detail detail = new Detail("Samara", "+70096", "ivan@gmail.com");
+            emp.setEmpDetail(detail);
+            session.beginTransaction();
+
+            // в итоге транзакции создадутся записи как в employees так и 
+               запись в details автоматом(из за cascade = CascadeType.ALL)
+            session.save(emp);
+            // так можно получить запись из таблицы через др таблицу         
+            session.get(Employee.class, 9).getEmpDetail()
+            // так удалятся данные работника + автоматом детали
+            Employee emp = session.get(Employee.class, 10);
+            session.delete(emp);
+
+            session.getTransaction().commit();
+        }
+    }
+
+    Bi
+    Employee <==> Detail, оба класса знают друг о друге.
+    // добавим в Detail поле 
+    @OneToOne(mappedBy = "empDetail",   // указыаем уже готовую связь one-to-one
+              cascade = CascadeType.ALL)// также делаем зависимости 
+    private Employee employee;     
+
+    public static void main(String[] args) {
+        try(SessionFactory factory = new Configuration()
+                .configure("hibernate.cfg.xml")
+                .addAnnotatedClass(Employee.class)
+                .addAnnotatedClass(Detail.class)
+                .buildSessionFactory();
+            Session session = factory.getCurrentSession()) {
+            Employee emp = new Employee("Petr", "Pacman", "Security", 260);
+            Detail detail = new Detail("Samara", "+79172076", "oleg@gmail.com");
+
+            emp.setEmpDetail(detail);
+            detail.setEmployee(emp);
+
+            session.beginTransaction();
+            session.save(detail);   // создается записи в 2-х таблицах
+            session.getTransaction().commit();
+
+            // удаление и получение данных как и в Uni, только можно работать
+               с обоими классами, так как они связаны как Bi.
+        }
+    }
+
+    Если необходимо удалить только записи в одной таблице, но не удалять
+    автоматом запись из другой:
+    @OneToOne(mappedBy = "empDetail",   // меняем CascadeType с ALL на неск-ко
+              cascade = {CascadeType.PERSIST, CascadeType.REFRESH}) 
+    // далее получаем детали, получаем работкника и обнуляем ссылку на детали
+    detail detail = session.get(Detail.class, 1);
+    detail.getEmployee().setEmpDetail(null);    // обнуляем ссылку на Detail
+    session.delete(detail); 
+
+
+--- Many-to-Many ---
+    Кружок1 \  / Ребенок1
+    Кружок2 <==> Ребенок2
+    Кружок3 /  \ Ребенок3
+
+    Join Table - 3-я таблица, отображающая связь между строками 2-х таблиц.
+    Столбцы Join Table - это Foreign Key, которые ссылаются на Primary Key
+    связываемых таблиц.
+
+    Создадим 3 таблицы в БД: children, section, child_section
+
+    // class Child, поле - внешний ключ, список секций
+    @ManyToMany()
+    @JoinTable(name = "child_section",  // имя 3-й связной таблицы/Join Table
+            joinColumns = @JoinColumn(name = "child_id"),           // поле в связной 3-й таблице
+                                                                       кот ссылается на id child
+            inverseJoinColumns = @JoinColumn(name = "section_id")   // поле в сязной 3-й таблице
+    )                                                                  кот ссыл на 2-ю таблицу()
+    private List<Section> sections;
+
+    // class Section, список детей, все то же, но поменять колонки местами
+    @ManyToMany()
+    @JoinTable(name = "child_section",
+            joinColumns = @JoinColumn(name = "section_id"),
+            inverseJoinColumns = @JoinColumn(name = "child_id")
+    )
+    private List<Child> children;
+
+    // Example
+    public static void main(String[] args) {
+        try (
+                SessionFactory factory = new Configuration()
+                        .configure("hibernate.cfg.xml")
+                        .addAnnotatedClass(Child.class)
+                        .addAnnotatedClass(Section.class)
+                        .buildSessionFactory();
+                Session session = factory.getCurrentSession()) {
+            session.beginTransaction();
+
+            // добавление детей и секций по секции
+            Section section = new Section("Football");
+            Child child1 = new Child("Ivan", 6);
+            Child child2 = new Child("Egor", 9);
+            Child child3 = new Child("Olga", 7);
+            section.addChildToSection(child1);
+            section.addChildToSection(child2);
+            section.addChildToSection(child3);
+            session.persist(section);   // если CascadeType не вкл REMOVE
+                                           persist - каскадное сохранение
+            // добавление детей и секций по ребенку
+            Section section1 = new Section("Math");
+            Section section2 = new Section("Chess");
+            Section section3 = new Section("Dance");
+            Child child = new Child("Inna", 5);
+            child.addSectionToChild(section1);
+            child.addSectionToChild(section2);
+            child.addSectionToChild(section3);
+            session.persist(child);     // если CascadeType не вкл REMOVE
+                                           persist - каскадное сохранение
+            // получение детей/секций через секцию/ребенка
+            Section section = session.get(Section.class, 1);
+            section.getChildren().forEach(System.out::println);
+            Child child = session.get(Child.class, 4);
+            child.getSections().forEach(System.out::println);
+
+            // удалить ребенка и связ с ним записи
+            Child child = session.get(Child.class, 4);
+            child.getSections().forEach(System.out::println);
+            session.remove(child);      // каскадное удаление
+
+            session.getTransaction().commit();
+            System.out.println("Done!");
+        }
+    }
+
+--- Eager/Lazy ---
+    Типы выборки данных:
+    Eager(нетерпеливая) загрузка - связанные сущности загружаются сразу
+    вместе с загрузкой основ сущ. Допустим департамент и лист работников.
+    Один SELECT на все сущности. После закрытия сессии все связ сужности 
+    будут подгружены.
+    
+    Lazy(ленивая) загрузка - связанные сущ НЕ загруж сразу вместе с осн
+    сущ. Связ сущ-ти загружаются при первом обращении к ним. Разные SELECT
+    на сущности. После commit нельзя посмотреть связ сущности, так как сессия
+    закрыта, если нужны связ сущ - грузите их до коммита.
+
+    Default:
+    One-to-One      Eager   // одна запись - нетелпеливая - легко
+    One-to-Many     Lazy    // может быть много связей - поэтому ленивая
+    Many-to-One     Eager   // одна связь - нетерпеливая - просто
+    Many-to-Many    Lazy    // может быть много связей - поэтому ленивая
+
+    // меняем default type
+    @OneToMany(cascade = CascadeType.ALL,
+            mappedBy = "department",
+            fetch = FetchType.EAGER)    // так менять тип выборки
+    private List<Employee> employees;
+
+
+              
+     

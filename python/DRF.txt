@@ -1,0 +1,63 @@
+Django REST Framework
+
+--- Description --------------------------------------------------------------+
+REST - Representational State Transfer, это архитектурный подход, 
+    определяющий, как API должны выглядеть.
+API  - application programming interface. Интерфейс управления. Описание
+    способов (набор классов, процедур, функций, структур или констант), которыми
+    одна компьютерная программа может взаимодействовать с другой программой.
+API endpoints - url, по которому получают/отправляют данные в опр формате
+
+--- install -----------------------------------+
+pip install django              # django
+pip install djangorestframework # DRF
+pip install Pillow              # nesessary lib
+
+--- settings ------------------------------------+
+django-admin startproject proj  # create project
+INSTALLED_APPS 'rest_framework' # add to settings
+DATABASES                       # set your db
+./manage.py migrate             # migrations
+./manage.py createsuperuser     # super user
+M
+
+-- Models/Модели -------------------------+
+# модели ничем не отличаются от Django
+# app/models.py
+from django.db import Model
+class Book(models.Model):
+    name = models.CharField(max_length=255)
+    price = models.IntegerField()
+
+Serializers/Сериализаторы ----------------------------------------------------
+# сериализация моделей в JSON и десериализация из JSON в БД(при POST запросах)
+# чем-то схожи с Forms, имеют похожие флаги и параметры
+# поля с пом флагов могут быть настроены для отображ в html каким-либо образом
+# создать файл в приложении serializers.py
+# app/serializers.py
+from rest_framework import serializers  # классы сериализаторов/
+Serializer                      # базовый класс, настраивается подробно
+ModelSerializer                 # наследник, облегченное создание, id авто 
+HyperlinkedModelSerializer      # наследник, вместо id - url
+from store.models import Book
+class BooksSerializer(ModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')  # доб поле
+    class Meta:                           
+        model = Book                                            # модель
+        fields = ['id', 'name', 'name_ru', 'owner']             # поля
+
+Views/представления -----------------------------------------------------------
+class BookViewSet(ModelViewSet):
+    queryset = Book.objects.all()                       # список
+    serializer_class = BooksSerializer                  # сериализатор
+    permission_classes = [permissions.IsAuthenticated]  # разрешение/доступ
+
+# urls.py ---------------------------------------------------------------
+router = SimpleRouter()                                 # endpoints 
+router.register(r'api/v1/books', BookViewSet)           # style api/v1/..
+urlpatterns = [
+    path('admin/', admin.site.urls),                    # admin pannel
+    path('api/auth/', include('rest_framework.urls)),   # registration
+]
+urlpatterns += router.urls                              # add our endpoints
+

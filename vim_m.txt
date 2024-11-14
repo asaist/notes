@@ -1,0 +1,200 @@
+Выход
+:x  Выход, сохранение изменений
+:q  Если не было сделано изменений
+:wq Выход и сохранить изменения, если они были сделаны
+:q! Выход и игнорировать какие-либо изменения
+:w  Сохранение без выхода
+
+Вставка текста
+i   Вставка перед курсором
+I   Вставка перед строкой
+a   Добавление после курсора
+A   Добавление после строки
+o   Создать новую строку после текущий
+O   Создать новую строку перед текущей
+r   Заменить один символ
+R   Заменить много символов
+
+Движение
+h   Двигаться влево
+j   Двигаться вниз
+k   Двигаться вверх
+l   Двигаться вправо
+w   Двигаться к следующему слову
+W   Двигаться к следующему пробелу
+b   Двигаться к началу слова
+B   Двигаться к началу пробельного разделителя
+e   Двигаться к концу слова
+E   Двигаться к концу (деление по пробелам)
+(   Двигаться на одно предложение назад 
+)   Двигаться на одно предложение вперёд 
+{   двигаться на один параграф назад
+}   двигаться на один параграф вперёд
+0   Двигаться на начало линии строки
+$   двигаться на конец строки
+1G  Двигаться к первой строке файла
+G   Двигаться к последней строке файла
+nG  Двигаться к н-ной строке файла
+:n  Двигаться к н-ной строке файла
+fc  Move forward to c
+Fc  Move back to c
+H   Двигаться наверх экрана
+M   Двигаться к середине экрана
+L   Двигаться к низу экрана
+%   Двигаться к парной скобке и обратно ()[]{}
+^g  Показать текущую строку и имя файла
+f 	+ character двигаться в строке к символу.
+<Ctrl-f> — на страницу (экран) вниз
+<Ctrl-b> — на страницу (экран) верх
+<Ctrl-d> — на пол страницы (экрана) вниз
+<Ctrl-u> — на пол страницы (экрана) верх
+<Ctrl-y> — на строку вверх, без изменения положения курсора
+<Ctrl-e> — на строку вниз, без изменения положения курсора
+z   сдвинуть страницу так чтобы строка с курсором оказалась внизу.
+z   [Enter] сдвинуть страницу так чтобы строка с курсором оказ вверху
+zz  страницу так чтобы строка с курсором оказалась посредине
+
+Сдвиг текста
+( shift + >> ): to indent the current line on the right.
+( shift + << ): to index the current line on the left.
+
+Выделить текст
+v	в обычном режиме, далее кнопками перемещения выбираем текст и жмем напр 'y' для копирования
+
+Удаление текста
+Почти все команды удаления выполняются набором d за которой следует движение. Например, dw удаляет слово. Ещё несколько примеров:
+x   Удаляет символ справа от курсора
+X   Удаляет символ слева от курсора
+D   Удаляет до конца строки
+dd  Удаляет текущую строку
+:d  Удаляет текущую строку
+ddp Меняет 2 строки местами
+
+Копирование текста
+Наподобие удаления, все команды копирования выполняются через y за которой можно задать движение. Например, y$ копирует до конца строки. Ещё парочка команд копирования:
+yy  Копирует текущую строку
+:y  Копирует текущую строку
+yyp	Дубликат строки
+
+Изменение текста
+Команда изменения - это команда удаления, которая переводит редактор в режим вставки. Она выполняется набором c за которой следует движение. Например, cw изменяет слово. Ещё немного изменения с этой командой:
+C   Изменить до конца строки
+cc  Изменить всю строку
+
+Вставка текста
+p   Вставить после позции или после строки
+P   Вставить перед позицией или перед строкой
+
+Поиск строк
+/строка Поиск строки вперёд
+?строка Поиск строки назад
+n   Поиск следующего вхождения строки
+N   Поиск предыдущего вхождения строки
+
+Замена
+Поиск и замена выполняются командой :s. 
+Часто она используется в комбинации с диапазоном или командой g(в конце)
+:{пределы}s/{что заменяем}/{на что заменяем}/{опции}
+пределы: 
+	% 		во всем файле 
+	4,17	с 4 по 7 строки
+опции:
+	g   	Флаг замена всех вхождений 'было' в строке.
+	c   	Флаг подтвердить замены.
+	&   	Повторить последнюю команду :s
+Example: :%s/foo/bar/g  замена всех 'foo' во всем файле на 'bar'
+
+Файлы
+:w  файл Записать в файл
+:r  файл Прочитать файл после строки
+:n  Перейти к следующему файлу
+:p  Перейти к предыдущему файлу
+:e  файл Редактировать файл
+!!программа Заменить строку выводом из программы
+
+Другое
+~   Переключает на большую и маленькую букву
+J   Объединяет строки
+.   Повторяет последнюю команду изменения текста
+u   Отменяет последнее изменение
+U   Отменяет все изменения на строке
+^R  Отмена отмены
+^n 	autocomplete texts that are already written
+za  open/close folding 1 level
+zA  open/close al level folding
+
+For macro:
+press q for starting the recording followed by some character 
+as the macro name, then perform some action (delete, replace, move, etc,.) 
+and press q again to stop the recording. Use ‘@’ to play a macro followed by its name.
+
+" .vimrc example
+" Файл настройки Vim Linux
+"
+" плагины =================================================================
+" устанавливаем sudo apt install curl git build-essential cmake python3-dev
+" если не уст-сь авто, заходим в vim жмем :PlugInstall
+" заходим в папку с плагином YCM
+" запускаем python3 install.py
+
+if empty(glob('~/.vim/autoload/plug.vim'))
+  silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+    \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+" Plugins =================================================================
+call plug#begin('~/.vim/plugged')
+
+Plug 'easymotion/vim-easymotion'    " передвижение по тексту \s
+Plug 'vim-airline/vim-airline'  " статусбар
+Plug 'vim-airline/vim-airline-themes'   " цветные темы для airline
+Plug 'arzg/vim-colors-xcode'
+
+" Initialize plugin system
+call plug#end()
+" =========================================================================
+
+"let g:airline_theme='onedark'
+"set clipboard=unnamedplus   " системный буфер на y p, install vim-gtk
+
+set nocompatible    " откл. совместимость с vi
+set nobackup        " don't save backup files
+set noswapfile      " отключить своп файлы
+
+filetype on         " enable file type detection
+filetype plugin on  " Enable plugins and load plugin for the detected file type
+filetype indent on  " Load an indent file for the detected file type
+
+syntax on           " включить синтакс
+"set number          " нумера строк
+set cursorline      " Highlight cursor line underneath the cursor horizontally.
+"set cursorcolumn    " Highlight cursor line underneath the cursor vertically.
+
+set encoding=utf-8  " кодировка файлов и редактора
+set scrolloff=3     " сколько строк внизу/вверху при скролинге
+set wrap            " перенос длинных строк
+set linebreak       " перенос целых слов
+colorscheme xcodedark " тема
+set background=dark " темный фон
+
+set expandtab       " табы в пробелы
+set tabstop=4       " ширина таба
+set softtabstop=4
+set shiftwidth=4
+set autoindent
+
+set hlsearch        " подсветка слов при поиске
+set incsearch       " highlight matching characters when text
+set ignorecase      " ignore capital letters
+set smartcase       " search specifically for capital letters
+"set showmatch       " Show matching words during a search
+"set showcmd         " Show partial cmd you type in the last line of the screen
+"set showmode        " Show the mode you are on the last line
+
+" Press \\ to jump back to the last cursor position.
+nnoremap <leader>\ ``
+
+" удалить пробельные символы в конце строк при сохранении
+autocmd BufWritePre * %s/\s\+$//e
+

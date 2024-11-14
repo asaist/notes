@@ -1,0 +1,162 @@
+Сетевые протоколы:
+    с какими сетевыми протоколами работает фронтенд разработчик
+    TCP - Transmittion Control Protocol (прот управл передеачей)
+    WebSocket - иннтерфейсы для управлением травпортным уровнем
+    HTTP:
+        Hyper Transfer Protocol (Прот передачи гипертекста(HTML))
+        методы GET, POST, PUT, DELETE..
+        GET vs POST(тело) + GET-запросы могут быть закешированы прокси-серверами и браузерами, в то время как POST-запросы не могут быть закешированы.
+        заголовки 
+        тело
+        порт 80 443(https)
+        куки - хранятся на компьютере клиента и используются для хранения персональных(выдаются сервером)
+        сессия - механизм взаимодействия между сервером и клиентом в протоколе HTTP, который позволяет сохранять информацию о состоянии клиента на сервере
+Браузер:
+    dev-tools
+    Объекты веб-хранилища localStorage и sessionStorage позволяют хранить пары ключ/значение в браузере
+HTML:
+    hyperText Markup Language — «язык гипертекстовой разметки»
+    Структура документа
+    div span
+    строчные блочные
+    таблицы
+    списки
+    атрибуты
+    как подключить скрипт, стили
+    form:
+        input виды
+        select, option
+    Методология БЭМ
+CSS:
+    Cascading Style Sheets (каскадные таблицы стилей) 
+    селекторы виды
+    margin vs padding (border
+    псевдоэлементы, псевлоклассы
+    position
+    display
+JavaScript:
+    приведение типов
+    scope лексическое окружение/видимость local global script Closure
+    замыкание 
+    обход объекта for (let key in user)
+    функции-конструкторы let book = new Book("Муму", "Турген")
+    this
+    классы:
+        наследование class ColoredRect extends Rectangle {       // наследование
+        constructor(height, width, color) {
+            super(height, width);
+    Promise - результат асинхронной операции new Promise((resolve, reject) ... then catch
+    Fetch - это новый стандарт JavaScript для выполнения запросов на сервер
+    Regex  - одна или больше цифр ^\d+
+    массивы - переборка for (let value of fruits) foreach, map, filter, reduce, every/some, sort
+    опциональная цепочка ?.
+    обработка ошибок, выброс ошибки
+    Window  - глобальная переменная - окно браузера со своими методами
+    BOM     - доп объекты браузера для работы со всем кроме документа
+    DOM     - все содержимое страницы в виде объектов, кот можно менять
+    DOM:
+        firtElementChild vs firstChild
+        children
+        querySelectorAll
+        querySelector
+        getElementById
+        after
+        remove
+        classList
+        style.fontSize
+        clientWidth;                    // ширина окна до полосы прокрутки
+        Events:
+            addEventListener('event', callbackFoo);
+            e.target
+            e.currentTarget;   // в отличие от target показывает текущий элемент(на родителе и ребенке обработчики)
+            e.preventDefault() сброс стд поведения эл
+            document.addEventListener('DOMContentLoaded', foo);
+            JSON.stringify
+
+    AJAX:
+        Asynchronous JavaScript and XML технология, которая позволяет отправлять запросы на сервер без перезагрузки страницы
+        XMLHttpRequest()
+        jQuery
+        fetch
+    Модули: 
+        нужны для разделения большого кода на отдельные файлы(модули)
+        Модуль обычно содержит класс или библиотеку с функциями.
+        Модуль – это просто файл. Один скрипт – это один модуль.
+        Модули работают только если их собрать, например с помощью Webpack!
+Git:
+MVC:
+JSON:  это текстовый формат обмена данными, который широко используется в web-разработке
+
+JAVA:   1. Java Core 8/11/17, Unit-tests
+            - примитивы/ссылочные знач по умолчанию
+            - overloading overriding hidding
+            - пакет/импорт
+            - Access modifier private -> default -> protected -> public
+            - Non-access modifiers final static abstract transient
+                transient       // такие переменные класса не сериализуются
+                native          // методы реализованы не на Java а на C. Не имеют тела;
+                synchronized    // методы могут быть исп в одно время только 1-м потоком.
+                volatile        // переменный могут быть изменены разными потоками и 
+                                данные изменения будут видны во всех потоках.
+                strictfp        // в методах и классах огранич точность вычислений float
+                                и double по стандарту IEEE
+            - this this() super()
+            - Object, equals and hashcode 
+                Если obj1.equals(obj2) == true -> hashCode должен быть одинаковый.
+                Если obj1.equals(obj2) == false-> hashCode НЕ обяз должен быть разным.
+            - String? StringBuilder
+            - массив
+            - Binding Compile/Runtime time binding
+            - 1. static blocks и static переменные родительского класса.
+                2. static blocks и static переменные дочернего класса.
+                3. non-static blocks и non-static переменные родительского класса.
+                4. constructor родительского класса.
+                5. non-static blocks и non-static переменные дочернего класса.
+                6. constructor дочернего класса.
+            - *** && и & в чем разница (false & b++ > 0)
+            - интерфейсы и абс классы
+            - casting
+            - Wrapper classes
+            - ООП
+            - исключения
+            - try/catch throw
+            - lambda
+            - функциональные интерфейсы
+            - Дженерики
+            - Колекции
+            - Стримы Optional
+            - File IO
+            - regex Date LocalDate
+            - Reflection
+            - Annotation
+        2. SQL, PostgreSQL, JDBC, Hibernate    
+            - Statement ResultSet
+            - Транзакции
+            - Entity POJO
+            - JPA
+            - One-to-Many 
+            /Lazy
+    
+        3. OOP, Patterns, SOLID*                               
+        4. Spring, Data,Web,Boot,Security,JPA,Cloud,Spring JDBC
+            Metadata            - совокупность объектов которые конфигурируют
+                            контейнер(создание бинов, управление зависимостями)
+            IoC Container       - контейнер/хранилище объектов(бинов), создает и 
+                                внедряет зависимости в них. Структура - ассоц массив.
+            ApplicationContext  - интерфейс, реализует базовый интерфейс BeanFactory,
+                                реализация ApplicationContext - это и есть Контейнер.
+            POJO                - Plain Old Java Object, объект с полями, свойствами,
+                                конструкторами, не содержит логики(DTO, Entity)                   
+            Bean                - сущность/объект Java класса, создаваемая, хранимая 
+                                в контейнере, которую можно получить из него.
+                                (Component, Controller, Repository, Service...)
+            - @Autowired
+        5. Maven, Git, Jenkins, Jira, Confluence      
+            - pom clean package
+            - add commit merge restore pull push fetch reset --hard push --force
+            - Controller|RestController
+            - REST Jacson ORM JSON    
+            - tomcat
+        6. Kafka, REST/SOAP, JSON/XML/YAML                     
+        7. Docker, Kubernetes(K8s)/OpenShift                   
+        8. Swagger*, JVM*, Multithreading*

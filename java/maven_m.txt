@@ -1,0 +1,573 @@
+# Maven
+
+--- Описание ---
+    Maven - framework для автоматизации сборки проектов
+    Позволяеет генерировать каркас проекта
+    Управляет зависимостями как внутри проекта, так и импорта сторонних
+    библиотек из огромного репозитория
+
+
+--- Структура проекта ---
+    Создать структуру проекта из консоли:
+    mvn archetype:generate [n]  // generate the project, n - id архетипа
+    виды архетипов:
+        1.  archetype	sample archetype project
+        2.  j2ee-simple	simplifed sample J2EE application
+        3.  mojo	    sample a sample Maven plugin
+        4.  plugin	    sample Maven plugin
+        5.  plugin-site	sample Maven plugin site
+        6.  portlet	    sample JSR-268 Portlet
+        7.  quickstart  sample Maven project
+        8.  simple	    simple Maven project
+        9.  site	    sample Maven site
+        10. site-simple	sample Maven site
+        11. webapp	    sample Maven Webapp project
+    далее ввод доп параметров интерактивно:
+        groupId         название организации  - io.github.ivan100kg
+        artifactId      уник название проекта - myProject
+        version         оставляем по умолч    - 1.0-SNAPSHOT (SNAPSHOT - в разраб)
+
+    создастся примерно такая структура проекта:
+        myProject
+        ├── pom.xml                         инфо о проекте
+        └── src                             исходники(основные и для тестирования)
+            ├── main                        исходники проекта
+            │   ├── java                    корень для всех Java-классов проекта
+            │   │   └── mygroup             пакеты проекта
+            │   │       └── App.java        классы проекта
+            │   └── resources               ресурсы проекта
+            └── test                        тесты, аналогичная структура как и main
+                ├── java
+                │   └── mygroup
+                │       └── AppTest.java
+                └── resources
+    
+
+--- Project Object Model ---
+    pom.xml -       детальное описание проекта, инфо о различных свойствах,
+                    настройка сборки(плагины, цели, профили), наследуемость.
+                    Наследуется от Parent pom и переопределяет разл. настройки.
+                    Указано лишь то что переопределяется. (размер малый)
+
+    Parent POM -    родительский для всех pom.xml, аналог Object Java.
+                    Содержит все настройки по умолчанию. (размер средний)
+
+    effectiv-pom -  огромный размер, все зависимости всех зависимостей расписаны
+
+    Артефакт -      это любая сущность в maven, описывается с помощью:
+                    groupId     - пакет, к кот принадл приложение + имя домена
+                    artifactId  - уникальный строковый ключ (id проекта)
+                    version     - версия проекта (данного артефакта/библиотеки)
+
+    // pom.xml
+    <project>
+        <!—Описание текущего проекта(обязательная секция) -->
+        <groupId>...</groupId>
+        <artifactId>...</artifactId>
+        <packaging>...</packaging>
+        <version>...</version>
+
+        <properties>
+            <!-- Секция свойств -->
+        </properties>
+
+        <repositories>
+            <!-- Секция репозиториев -->
+        </repositories>
+
+        <dependencies>
+            <!-- Секция зависимостей -->
+        </dependencies>
+
+        <build>
+            <!-- Секция сборки -->
+        </build>
+    </project>
+
+
+--- Properties / свойства(переменные) ---
+    Часто встречающиеся параметры Maven позволяет вынести в переменные
+    В переменную можно вынести версию Java, версии библиотеки, пути к опред ресурсам ...
+
+    <properties>                                                - блок с переменными
+        <junit.version>5.2</junit.version>                      - объявление перем   <--+
+        <project.artifactId>new-app</project.artifactId>                                |
+        <maven.compiler.source>1.13</maven.compiler.source>                             |
+        <maven.compiler.target>1.15</maven.compiler.target>                             |
+    </properties>                                                                       |
+                                                                                        |
+    <version>${junit.version}</version>                         - обращение к перем ----+
+
+    Встроенные свойства проекта(можно писать через project. или pom.):
+    ${basedir}  - корневой каталог проекта, где располагается pom.xml
+    ${version}	- версия артефакта
+
+    Свойства проекта:
+    ${project.build.directory}          - target директория проекта
+    ${project.build.outputDirectory}	- target директория компилятора. По умолчанию target/classes
+    ${project.name}                     - наименование проекта
+    ${project.version}                  - версия проекта
+
+    Свойства настроек:
+    ${settings.localRepository}         - какой-то путь определенный в settings.xml
+
+
+--- Dependency/зависимости (подключение библиотек) ---
+    Maven сначала будет искать указанную библиотеку (артефакт) в локальном репозитории
+    Если он там ее не найдет, то затем будет искать в глобальном Maven-репозитории
+    И потом загрузит ее в твой локальный репозиторий
+    
+    ~/home/.m2                  - локальный репозиторий
+    https://mvnrepository.com/  - центральный пепозиторий Maven где хранятся
+                                  все библиотеки
+    
+    <dependencies>                                  - все зависимости проекта
+        <dependency>                                - зависимость(библиотека)
+        <groupId>org.springframework</groupId>      - groupId
+        <artifactId>spring-core</artifactId>        - artifactId
+	    <version>5.3.18</version>                   - version
+    </dependency>
+    ...
+    </dependencies>
+
+    Подключение сторонних репозиториев:
+    <repositories>                                  - все стороние репозитории
+        <repository>                                - репозиторий
+            <id>public-javarush-repo</id>           - Key/ID
+            <name>Public JavaRush Repository</name> - Имя
+            <url>http://maven.javarush.com</url>    - URL
+        </repository>
+        ...        
+    </repositories>
+    
+    
+--- Фазы сборки проекта ---
+    1	validate	проверяет корректность метаинформации о проекте
+    2	compile	    компилирует исходники
+    3	test	    прогоняет тесты классов из предыдущего шага
+    4	package	    упаковывает скомпилированные классы в новый артефакт: jar, war, zip, …
+    5	verify	    проверяет корректность артефакта и удовлетворение требованиям качества
+    6	install	    кладет артефакт в локальный репозиторий
+    7	deploy	    заливает артефакт на production-сервер или удаленный репозиторий
+
+
+--- Циклы работы/Lifecycles ---
+    Все команды maven делятся на три группы – lifecycles.
+    Их называют жизненными циклами, так как они задают порядок фаз,
+    которые выполняются во время сборки или определенного жизненного цикла,
+    потому что не все действия Maven являются сборкой.
+    
+    цикл        | Фаза                   | Описание   
+    ------------+------------------------+---------------------------
+    clean       | pre-clean              | очистка директории /target
+                | clean                  |
+                | post-clean             |
+    ------------+------------------------+---------------------------
+    default     | validate               | сборка проекта
+                | generate-sources       | - сгенерировать Java-код на основе xml
+                | process-sources        |
+                | generate-resources     |
+                | process-resources      |
+                | compile                |
+                | process-test-sources   |
+                | process-test-resources |
+                | test-compile           |
+                | test                   |
+                | package                |
+                | install                |
+                | deploy                 |
+    ------------+------------------------+---------------------------
+    site        | pre-site               | автоматическая генерация
+                | site                   | документации по проекту
+                | post-site              |
+                | site-deploy            |
+
+    Стандартные жизненные циклы могут быть дополнены функционалом с помощью Maven-плагинов
+
+
+--- build, настройка сборки ---
+    Секция содержит основную информацию по сборке: где расположены Java-файлы,
+    файлы ресурсов, какие плагины используются, куда складывать собранный проект
+    
+    <build>
+        <finalName>projectName</finalName>
+        <sourceDirectory>${basedir}/src/java</sourceDirectory>
+        <outputDirectory>${basedir}/targetDir</outputDirectory>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/java/resources</directory>
+                <includes>
+                    <include>**/*.properties</include>  - ** - любое кол-во дир-ий
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+                . . .
+        </plugins>
+    </build>
+
+    <finalName>         - имя результирующего файла сборки (jar, war, ear..), 
+                          который создается в фазе package. Если параметр не задан,
+                          то используется значение по умолчанию — artifactId-version
+    <sourceDirectory>   - переопределить месторасположения файлов с исходным кодом. 
+                          По умолчанию файлы в ${basedir}/src/main/java
+    <outputDirectory>   - куда компилятор будет сохранять результаты 
+                          компиляции - *.class файлы. По умолчанию target/classes
+    <resources>         - и вложенные в нее тэги <resource> определяют местоположение
+                          файлов ресурсов. Файлы ресурсов при сборке просто копируются
+                          в директорию outputDirectory. Значение по умолчанию 
+                          директории с ресурсами равно src/main/resources
+
+
+--- Plugin/Плагины ---
+    Плагины позволяют вставлять в стандартный цикл новые шаги
+    (например, распределение на сервер приложений) или расширять существующие шаги
+    Можно указывать какой плагин запускать, в какой фазе и с какими параметрами
+
+    <build>                                                         - корень
+      <plugins>                                                     - все плагины
+        <plugin>                                                    - плагин
+          <groupId>org.apache.maven.plugins</groupId>               - groupId
+          <artifactId>maven-dependency-plugin</artifactId>          - artifactId
+          <version>3.0.2</version>                                  - version
+          <executions>
+            <execution>
+              <phase>install</phase>                                - фаза
+              <goals>                                               - цели
+                <goal>copy-dependencies</goal>                      - цель
+              </goals>
+              <configuration>                                       - конфиг
+                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        ...
+      </plugins>
+    </build>
+
+
+--- плагины для сборки ---
+    Все полные возможности плагинов смотреть на https://maven.apache.org/plugins/
+
+    maven-compiler-plugin	    Управляет Java-компиляцией, различные манипуляции
+                                можно передавать различные параметры комп-ру,
+                                память, версия Java, связка с фазами ...
+    maven-resources-plugin	    Управляет включением ресурсов в сборку
+    maven-source-plugin	        Управляет включением исходного кода в сборку
+    maven-dependency-plugin     Управляет процессом копирования библиотек зависимостей
+    maven-jar-plugin	        Плагин для создания итогового jar-файла(библиотеки)
+                                необходимо создать манифест и указать путь до него,
+                                либо можно авто генерировать манифест(<manifest>),
+                                выбор файлов попадающих в jar, главный класс ...
+    maven-war-plugin	        Плагин для создания итогового war-файла
+    maven-surefire-plugin	    Управляет запуском тестов
+    buildnumber-maven-plugin	Генерирует номер сборки
+    maven-shade-plugin          Создать толстый jar с библиотеками внутри
+
+
+--- jar war ---
+    jar-файл может запустить просто java-машина
+    war-файл нужно загрузить на веб-сервер. Самостоятельно он не запускается
+    
+    jar-библиотека (Java Archive) - это просто zip архив содержит:
+        - скомпилированные классы
+        - ресурсы: properties-файлы и тому подобное
+        - манифест MANIFEST.MF
+        - другие jar-библиотеки (редко)
+
+    Cтруктура архива jar:
+        META-INF/
+            MANIFEST.MF
+        com/
+            javarush/
+                MyApplication.class
+        application.properties
+
+    war-файл (Web Archive) - тоже просто архив, содержит:
+        Java-часть:
+            - скомпилированные классы
+            - ресурсы для java-классов: properties-файлы и тому подобное
+            - другие jar-библиотеки (часто)
+            - манифест MANIFEST.MF
+        Web-часть:
+            - web-xml – дескриптор развертывания веб-сервиса
+            - jsp-сервелеты
+            - статические веб-ресурсы: HTML, CSS, JS-файлы
+    
+    Пример типичного war-файла:
+    META-INF/
+        MANIFEST.MF
+    WEB-INF/
+        web.xml
+        jsp/
+            helloWorld.jsp
+        classes/
+            static/
+            templates/
+            application.properties
+        lib/
+            // *.jar files as libs
+
+
+--- свой репозиторий на GitHub ---
+    site-maven-plugin - плагин, для загрузки своей библиотеки на GitHub
+
+    1. Конфигурируем pom.xml
+    <project>
+        <properties>
+            <github.global.server>github</github.global.server>
+            <github.maven-plugin>0.9</github.maven-plugin>
+        </properties>
+    
+        <distributionManagement>                                            временный локальный репозиторий
+            <repository>                                                    технически это просто папка
+                <id>internal.repo</id>
+                <name>Temporary Staging Repository</name>
+                <url>file://${project.build.directory}/mvn-repo</url>
+            </repository>
+        </distributionManagement>
+    
+        <build>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-deploy-plugin</artifactId>            указание плагину класть собранную
+                    <version>2.8.1</version>                                сборку во временный репозиторий
+                    <configuration>
+                        <altDeploymentRepository>
+                            internal.repo::default::file://${project.build.directory}/mvn-repo
+                        </altDeploymentRepository>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.github</groupId>                    размещение репозитория с пом 
+                    <artifactId>site-maven-plugin</artifactId>              коммита на GitHub
+                    <version>${github.maven-plugin}</version>
+                    <configuration>
+                        <message>Maven artifacts for ${project.version}</message>
+                        <noJekyll>true</noJekyll>
+                        <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
+                        <branch>refs/heads/mvn-repo</branch>
+                        <includes>**/*</includes>
+                        <repositoryName>[name-project]</repositoryName>
+                        <repositoryOwner>[my-name]</repositoryOwner>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>site</goal>
+                            </goals>
+                            <phase>deploy</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </build>
+    </project>
+
+    2. Конфигурируем setting.xml. Указать логин и пароль к своему репозиторию в Maven setting.xml:
+    <settings>
+        <servers>
+            <server>
+                <id>github</id>
+                <username>[username]</username>
+                <password>[password]</password>
+            </server>
+        </servers>
+    </settings>
+
+    3. Использование сторонними пользователями
+    <repositories>
+        <repository>
+            <id>[name-project]-mvn-repo</id>
+            <url>https://raw.github.com/[username]/[name-project]/mvn-repo/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+
+--- settings.xml ---
+# deploy
+
+# шифрование пароля
+    1. создать мастер-пароль    mvn --encrypt-master-password <password> <----------+
+    2. создать файл ~/.m2/settings-security.xml и добавить туда полученный пароль --+
+        <settingsSecurity>                                                                                                      
+            <master>{VOLpK4325233EHd324sdg3w4fdg}</master>               
+        </settingsSecurity>
+    3. зашифровать нужный пароль от сервера mvn --encrypt-password <password>
+       и вставить его в settings.xml
+# пример setting.xml с указанием репозиториев, в pom можно не указывать
+    <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0
+        http://maven.apache.org/xsd/settings-1.2.0.xsd">                                                                                                                                                                 
+        <servers>
+            <server>
+                <id>naukaServer</id>
+                <username>tomcat</username>
+                <password>{enc_pass}</password>
+            </server>
+            <server>
+                <id>nexus-repo</id>
+                <username>admin</username>
+                <password>{enc_pass}</password>
+            </server>
+        </servers>
+        <mirrors>
+            <mirror>
+                <id>maven-public</id>
+                <mirrorOf>*</mirrorOf>
+                <url>http://172.16.0.216:8081/repository/maven-public</url>
+                <blocked>false</blocked>
+            </mirror>
+        </mirrors>
+        <profiles>
+            <profile>
+                <id>nexus</id>
+                <repositories>
+                    <repository>
+                        <id>nexus-releases</id>
+                        <url>http://172.16.0.216:8081/repository/maven-releases/</url>
+                        <releases>
+                            <enabled>true</enabled>
+                        </releases>
+                        <snapshots>
+                            <enabled>false</enabled>
+                        </snapshots>
+                    </repository>
+                    <repository>
+                        <id>nexus-dto</id>
+                        <url>http://172.16.0.216:8081/repository/dto/</url>
+                        <releases>
+                            <enabled>true</enabled>
+                        </releases>
+                        <snapshots>
+                            <enabled>false</enabled>
+                        </snapshots>
+                    </repository>
+                </repositories>
+            </profile>
+        </profiles>
+        <activeProfiles>
+            <activeProfile>nexus</activeProfile>
+        </activeProfiles>
+    </settings>
+
+
+--- Запаковка сборки в Docker ---
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.4.10</version>
+                <configuration>
+                    <dockerDirectory>${project.basedir}</dockerDirectory>   путь Dockerfile
+                    <imageName>javarush/${project.artifactId}</imageName>   имя образа
+                </configuration>
+                <executions>
+                    <execution>                     сборка docker(mvn docker:build)
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    Dockerfile для jar:
+    -------------------
+    FROM java:11
+    EXPOSE 8080
+    ADD /target/demo.jar demo.jar
+    ENTRYPOINT ["java","-jar","demo.jar"]
+
+    Dockerfile для war:
+    -------------------
+    FROM tomcat8
+    ADD sample.war ${CATALINA_HOME}/webapps/ROOT.war
+    CMD ${CATALINA_HOME}/bin/catalina.sh run
+
+    
+--- Example пример pom.xml ---
+    <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+        <groupId>io.github.ivan100kg</groupId>
+        <artifactId>calculator</artifactId>
+        <version>1.0</version>
+        <packaging>jar</packaging>
+
+        <name>calculator</name>
+        <url>http://maven.apache.org</url>
+
+        <properties>
+            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            <maven.compiler.source>11</maven.compiler.source>
+            <maven.compiler.target>11</maven.compiler.target>
+        </properties>
+
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>20231013</version>
+            </dependency>
+        </dependencies>
+
+        <build>
+            <finalName>nsiDictionary</finalName>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.3.0</version>
+                    <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>io.github.ivan100kg.calculator.App</mainClass>
+                            <classpathPrefix>./lib/</classpathPrefix>
+                        </manifest>
+                    </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <configuration>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                            <configuration>
+                                <transformers>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                        <mainClass>io.github.ivan100kg.calculator.App</mainClass>
+                                    </transformer>
+                                </transformers>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </build>
+    </project>

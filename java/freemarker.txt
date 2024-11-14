@@ -1,0 +1,253 @@
+FreeMarker - шаблонизатор для Java
+FreeMarker Template Language (FTL) - язык шаблонизатора
+
+FreeMarker соединяет шаблон с java объектами и формирует страницы
++--Template-------+
+|<html>           |
+|    ...          |
+|    Hello ${name}|-----+
+|    ...          |      \
+|</html>          |       \       +--Output--------+
++-----------------+        \      |<html>          |
+                            ====> |    ...         |
++--Java objects---------+ /       |    Hello world!|
+|...                    |/        |    ...         |
+|model.setName("Word!");|         |</html>         |
+|...                    |         +----------------+
++-----------------------+
+
+Example template:                                
+    <html>
+    <head>
+        <title>Welcome!</title>
+    </head>
+    <body>
+    <h1>Welcome ${user}!</h1>
+    <p>Our latest product:
+        <a href="${latestProduct.url}">${latestProduct.name}</a>!
+    </body>
+    </html>
+
+--- Datatypes --------------------------------------------------------------
+hashes  - содержат другие переменные(как скаляры так и хэши) - latestProduct
+scalars - содержат 1 значение                                - user
+latestProduct.name  - обратиться к значению подэлемента
+animals[0].name     - обратиться к значению эл последовательности
+
+scalars:
+String      - ${r"C:\foo\bar"} экранирование, ${user[0]} символы
+Number
+Date-like   - date-time, date, time
+Boolean
+
+Containers:
+Hash        - ассоц массив 
+Sequence    - массив
+Collection  - itareble
+
+Subroutines:
+functions   - ${avg(animals.python.price, animals.elephant.price)}
+
+--- Special parts FTL -------------------------------------------------
+Interpolation:
+${user.id}  - freemarker заменяет выражение в скобках - соотв значением
+${<>}       - автоматически экранирует все символы
+Tags/Direcrives:
+<#tag prms> - имя тэга начинается с символа # (могут быть пар-ры)
+<@tag prms> - кастомные тэги пользователя начинаются с @
+параметры зависят от конкретного тэга
+не всегда используется закрывающий тэг(include)
+<#/tag>     - закрывающий тэг (<@/tag>)
+<#tag>      - преопределенный одиночный тэг
+<@tag />    - кастомный одиночный тэг
+влож тэги не могут закрыться после внешнего
+Comments:
+<#-- comment --> могут быть в любом месте
+Все что не попадает под интерполяцию или тэги - печатается 1 в 1 в html
+-----------------------------------------------------------------------
+Basic directives:
+
+--- if -----------------------
+<h1>
+    Welcome ${user}
+    <#if user == "Big Joe">
+        text
+    <#elseif user != hui.user>
+        text
+    <#else>
+        text
+    </#if>
+</h1>
+
+Logical operations: && || !
+
+--- list --------------------------------------------------
+перебрать список
+переменная по очереди принимает значение последовательности
+
+в таблице:
+<table>                                         <table>
+  <#list animals as an>                             <tr><td>mouse<td>50 Eur
+    <tr><td>${an.name}<td>${an.price} Eur ==>       <tr><td>elephant<td>5000 Eur
+  </#list>                                          <tr><td>python<td>4999 Eur
+</table>                                        </table>
+
+в списке:
+<ul>
+<#list misc.fruits as fruit>
+  <li>${fruit}
+</#list>
+</ul>
+
+в списке: если будет нулевой список ничего не будет в html
+<#list misc.fruits>
+  <ul>
+    <#items as fruit>
+      <li>${fruit}
+    </#items>
+  </ul>
+</#list>
+
+В абзаце с разделителем <#sep> = ", " 
+<p>Fruits: <#list misc.fruits as fruit>${fruit}<#sep>, </#list>
+В абзаце с разделителем <#sep> = ", " если есть элем
+<p>Fruits: <#list misc.fruits as fruit>${fruit}<#sep>, <#else>None</#list>
+
+Все вместе
+<#list misc.fruits>
+  <p>Fruits:
+  <ul>
+    <#items as fruit>
+      <li>${fruit}<#sep> and</#sep>
+    </#items>
+  </ul>
+<#else>
+  <p>We have no fruits.
+</#list>
+
+все директивы можно исп вместе
+<#list animals as animal>
+      <div<#if animal.protected> class="protected"</#if>>
+        ${animal.name} for ${animal.price} Euros
+      </div>
+</#list>
+
+--- include ------------------------
+включить код из другого файла по url
+используется без закрывающего тэга
+<html>
+<head>
+  <title>Test page</title>
+</head>
+<body>
+  <h1>Test page</h1>
+  <p>Blah blah...
+  <#include "/copyright_footer.html">
+</body>
+</html>
+
+--- built-ins -------------------------------------------------
+Using built-ins/встроенные функции:
+user?has_content        string не null и не empty 
+user?upper_case         перевод в верхний регистр
+animal.name?cap_first   первый символ в верх регистр
+user?length             кол-во символов
+animals?size            кол-во элементов последовательности
+В цикле <#list animals as animal>...</#list>
+animal?index            индекс элемента
+animal?counter          номер итерации
+animal?item_parity      четный/нечетный номер итерации <------+
+с параметрами                                                 |
+animal.protected?string("Y", "N")       вернет Y если true    |
+animal?item_cycle('light', 'dark')      примерно тоже самое --+
+fruits?join(", ")       список -> в строку с разделителем ", "
+user?starts_with("J")   true/false если начинается с J
+animals?filter(it -> it.protected)      типа фильтра со stream
+<#list animals?filter(it -> it.protected) as animal>...</#list>
+fruits?join(", ")?upper_case            chaining
+
+--- Null ---------------------------------------------------------------
+Обработка нулевых(Null) значений
+<h1>Welcome ${user!"visitor"}!</h1>         если user == null -> visitor
+?? - проверка на null -> boolean
+<#if user??><h1>Welcome ${user}!</h1></#if> или пропустить все приветствие
+animals.python.price!0      если price == null -> 0
+(animals.python.price)!0    если что-то из этого null -> 0
+animals.python.price??      также если price==null
+(animals.python.price)??    если что-то из этого null
+
+--- User vars ---------------------------------------------
+<#assign x = 100>           создать и иниц переменную х            
+<#assign y += x>            создать переменную y            
+${mouse!"No mouse."}        No mouse
+<#assign mouse="Jerry">     инициалицируем переменную mouse
+${mouse!"No mouse."}        Jerry  
+<#assign seq = ['a', 'b']>  иниц массив
+${seq[0]!'-'}               a
+${seq[1]!'-'}               b
+${seq[2]!'-'}               -
+${seq[3]!'-'}               -
+
+--- User-defined directives ----------------------------------------
+тэги fremarker(функция/макрос) которые можно переиспользовать в коде
+
+сам по себе макрос не выполняется, создается переменна greet
+<#macro greet>
+  <font size="+2">Hello Joe!</font> - просто печатает текст
+</#macro>
+вызов макроса/выполнение тела макроса
+<@greet></@greet>       - так можно вызвать наш макрос greet
+<@greet/>               - или даже так
+
+параметры макроса видны только в нем
+<#macro greet person>   - макрос с параметрами(может быть много)
+  <font size="+2">Hello ${person}!</font>   - используем параметры
+</#macro>
+<@greet person="Fred"/> and <@greet person="Batman"/>   - вызов
+<font size="+2">Hello Fred!</font>          - output
+and <font size="+2">Hello Batman!</font>
+
+someParam=foo       - foo - аргумент, кот можно переисп
+someParam="${foo}"  - стринг
+someParam="${3/4}"  - стринг
+someParam=3/4       - числовые параметры
+
+--- Nested content ------------------------------------
+<#macro border>
+  <table border=4 cellspacing=0 cellpadding=4><tr><td>
+    <#nested>       - сюда вложится какой-то контент
+    <#nested>       - может быть много
+  </tr></td></table>
+</#macro>
+вложенный текст окружится началом и концом макроса
+<@border>The bordered text</@border>    - использование
+если использовать без <#nested>         - толку не будет
+
+любая вложенность макросов:
+<@border>
+  <ul>
+  <@do_thrice>
+    <li><@greet person="Joe"/>
+  </@do_thrice>
+  </ul>
+</@border>
+
+--- Loops ------------------------------
+<#macro do_thrice>
+  <#nested 1>
+  <#nested 2>
+  <#nested 3>
+</#macro>
+
+<@do_thrice ; x> перебор в цикле
+  ${x} Anything.
+</@do_thrice>
+
+Output:
+1 Anything.
+2 Anything.
+3 Anything.
+
+
+
+

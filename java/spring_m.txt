@@ -1,0 +1,2953 @@
+Spring Core
+--- About ---
+    Это фреймворк, предназначенный для более быстрого и простого
+    построения Java приложений.
+    Создан: 2004.
+    Последняя версия: Spring 5
+    site: www.spring.io
+
+    Maven pom.xml:
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>5.3.21</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-core -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>5.3.21</version>
+    </dependency>
+
+--- Structure ---
+    Spring application:
+    Metadata --> IoC Container <-- POJOs
+
+    Metadata            - совокупность объектов которые конфигурируют
+                          контейнер(создание бинов, управление зависимостями)
+    IoC Container       - контейнер/хранилище объектов(бинов), создает и 
+                          внедряет зависимости в них. Структура - ассоц массив.
+    ApplicationContext  - интерфейс, реализует базовый интерфейс BeanFactory,
+                          реализация ApplicationContext - это и есть Контейнер.
+    POJO                - Plain Old Java Object, объект с полями, свойствами,
+                          конструкторами, не содержит логики(DTO, Entity)                   
+    Bean                - сущность/объект Java класса, создаваемая, хранимая 
+                          в контейнере, которую можно получить из него.
+                          (Component, Controller, Repository, Service...)
+
+--- Inversion of Control ---
+    IoC - аутсорсинг создания и управления объектами. Т.е. передача нами
+    прав на создание и управление объектами нами to Spring.
+
+    Spring Container    - создание и хранение объектов
+    config file         - описывает объекты кот будет создавать Container
+    MyClass             - обращается к Container для получ объекта, а 
+                          не создает их самостоятельно.
+
+    MyClass <=====> Spring Container <--- config file
+                                         /     |     \
+                                       Dog    Cat    ...
+
+    Основные функции Spring Container:
+    IoC     - Inversion of Control, инверсия управления.
+              Создание и управление объектами.
+    DI      - Dependency Injection, внедрение зависимостей.
+
+    Способы конфигурации Spring Container:
+    XML file (устаревший способ)
+    Annotations + XML file (современный способ)
+    Java code (современный способ)
+
+    Spring Bean (или просто bean/бин) - объект, который создается и 
+    управляется Spring Container.
+   
+--- ApplicationContext configuration ---
+    # with .xml file
+    // создаем файл в директории resources(root) "applicationContext.xml"
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+
+        <bean id = "myPet"  // id используется при создании бина
+            class = "io.github.ivan100kg.spring_intro.Dog"> // full classname
+        </bean>
+    </beans>
+
+    Создать Spring Container:
+    ApplicationContext - это и есть Spring Container.
+    // для способа 1, с пом xml, Pet - interface for Dog,Cat..
+    ClassPathXmlApplicationContext context =        // get context
+            new ClassPathXmlApplicationContext("applicationContext.xml");
+    Pet pet = context.getBean("myPet", Pet.class);  // get bean (id, Class)
+    pet.say();                                      // call Dog method
+    context.close();                                // close context
+    
+    Теперь мы можем получать и управлять объектом Dog через 
+    Spring Container, вызывая его по id - это и есть бин, чтобы 
+    изменить напр Dog на Cat, нужно просто заменить в applicationContext.xml
+    аттрибут class на io.github.ivan100kg.spring_intro.Cat
+
+    Создание бинов через фабрику:
+    <factory-method> - указываем метод и нов объект будет создаваться
+    не через конструктор, а через статик метод - синглтон остается синглтон
+
+    # with annotations + xml ----------------------------------------------
+     Это более короткий и быстрый способ.
+    Процесс в 2 этапа:
+        сканирование классов и поиск аннотаций @Component
+        создание(регистрация) бина в Spring Container
+    
+    // Для сканирования необходимо указать в applicationContext.xml где скан:
+        <context:component-scan base-package="io.github.ivan100kg"/>
+        Указываем эту строку и наш главный пакет с классами.
+
+    // Теперь пометим наш класс аннотацией @Component
+    @Component("catBean")   // сдесь задаем люб имя бина, либо default cat
+    public class Cat implements Pet{
+        @Override
+        public void say() {
+            System.out.println("Meow-Meow");
+        }
+    }
+
+    // Создадим ApplicationContext и вытянем бин
+    ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+                "applicationContext.xml"
+    );
+    Cat cat = context.getBean("catBean", Cat.class);    // получим бин 
+    cat.say();
+    context.close();
+
+    # Java code
+    способ #1
+    @Configuration                  // класс является конфигурацией
+    @ComponentScan("spring_intro")  // пакет для скана бинов и разл аннотаций
+    public class MyConfig {}        // имя класса любое
+
+    // создать ApplicationContext, отличается от xml способа, указываем
+       наш @Configuration класс. 
+    AnnotationConfigApplicationContext context =
+                new AnnotationConfigApplicationContext(MyConfig.class);
+    Person person = context.getBean("personBean", Person.class);
+    // Dependency Injection выполняется примерно так-же
+    person.callYourPet();
+    context.close();
+
+    способ #2
+    Сканирование не идет, поэтому убираем в конфиг-классе @ComponentScan
+    Убираем все аннотации @Component @Autowired @Qualifier в классах
+    
+    @Configuration
+    public class MyConfig {
+        @Bean                   // @Bean регулирует создание и обращ к бину
+        @Scope("singleton")     // можно указ scope - только 1 объект(как обычн)
+        public Cat catBean() {  // id будет как наз-е метода "catBean"
+            return new Cat();   
+        }
+        
+        @Bean
+        public Person personBean() {
+            return new Person(catBean());   // DI прописываем зависимость
+        }
+    }
+    // все работает также, бины попадают в контекст и можно их достать
+    AnnotationConfigApplicationContext context =
+                new AnnotationConfigApplicationContext(MyConfig.class);
+    Person person = context.getBean("personBean", Person.class);
+    person.callYourPet();
+    context.close();
+
+    Использование @Value из конфиг файла (для 2-ух способов):
+    Для того чтобы исп аннотацию @Value и подставлять наши значения из 
+    конфиг файла нужно исп аннотацию @PropertySource
+
+    // в классе Person
+    @Value("${person.surname}") // значения берутся из кофиг файла <--------+
+    private String surname;                                                 |
+                                                                            |
+    // Config.java                                                          |
+    @Configuration                                                          |
+    @ComponentScan("io.github.ivan100kg.spring_intro")                      |
+    @PropertySource("classpath:myApp.properties")   // наш конфиг файл  ----+
+    public class MyConfig {
+
+--- Dependency Injection ---
+    # with xml
+    DI - аутсорсинг добавления/внедрения зависимостей.
+    DI делает объекты нашего приложения слабо зависимыми друг от друга.
+
+    Способы внедрения зависимостей:
+    с помощью конструктора
+    с помощью сеттеров
+    Autowiring
+    
+    Способ #1 - с помощью конструктора:
+    Допустим есть класс Person, который has an another class inside(Pet):
+        public Person(Pet pet) {    // конструктор принимает об другого класса
+            this.pet = pet;
+        }
+    Допишем зависимость в наш applicationContext.xml:
+        <bean id="myPet"
+            class="io.github.ivan100kg.spring_intro.Dog">
+        </bean>
+
+        <bean id="myPerson"
+            class="io.github.ivan100kg.spring_intro.Person">
+            <constructor-arg ref="myPet"/>  // constructor-arg - арг костр
+        </bean>                             // ref - ссылка bean id
+    Далее можно не создавая класс Dog/Cat создать Person:
+        Person person = context.getBean("myPerson", Person.class);
+        person.callYourPet();   // some method of Person
+        context.close();
+
+    Способ #2 - с помощью setter:
+    Добавим метод setPet to Person:
+        public void setPet(Pet pet) {
+            this.pet = pet;
+        }
+    Изменим applicationContext.xml:
+        <bean id="myPerson"
+            class="io.github.ivan100kg.spring_intro.Person">
+            <property name="pet" ref="myPet"/>  // свойство pet -> метод setPet
+        </bean>                                 // перв буква стан заглав -> Pet
+                                                // внач добав set + Pet = setPet()
+    Работает все также, код менять не надо - просто др способ.
+
+    Внедрение других значений через методы(сеттеры):
+    Например в классе есть 2 поля не иниц через конструктор, но нужно вызвать
+    их сеттеры:
+        // поля
+        private String surname;
+        private int age;
+        // сеттеры
+        public void setSurname(String surname) { this.surname = surname; }
+        public void setSurname(int age) { this.age = age; }
+    // как вызвать с пом applicationContext.xml 
+    // способ #1 прямо в файле applicationContext.xml 
+    <bean id="myPerson"
+            class="io.github.ivan100kg.spring_intro.Person">
+        <property name="pet" ref="myPet"/>
+        <property name="surname" value="Bond"/> // value - передать значение
+        <property name="age" value="39"/>       // name - св-во age->setAge()
+    </bean>
+    // способ #2 с пом др файла myFile.properties:
+        person.surname = Bond   // создадим файл resources/myFile.properties
+        person.age = 39         // добавим эти строки в myFile.properties
+    // добавим эту строку перед всеми бинами
+        <context:property-placeholder location="classpath:myApp.properties"/>
+        classpath - местонахождение пользовательских классов(resources там же)
+    // изменим applicationContext.xml 
+        <property name="surname" value="${person.surname}"/>    // подставим
+        <property name="age" value="${person.age}"/>
+    Вызов значений из др файла ${name}, name может быть любым, но
+    парвильнее и более понятно уточнять типа person.age
+    
+    Spring Expression Language (SpEL):
+    #{person.getAge()} - доступ к проперти, а также к методам/полям бина, 
+    практически можно писать любой Java code.
+
+    # with annotations
+    -- DI @Autowired
+    Для внедрения зависимостей с помощью аннотаций исп @Autowired.
+    Может использоваться:
+        конструктор
+        method
+        поле
+    Использовать можно любой тип, но желательно придерж одного стиля.
+    
+    Использование с конструктором:
+    // добустим есть class Person, конструктор приним об др класса Pet,
+    пометим аннотацией 2 класса, тем самым создадим бины(если scope не prototype).
+    @Component("personBean")
+    class Person {
+        @Autowired      // пометим конструктор аннотацией @Autowired
+        public Person(Pet pet) {
+            System.out.println("Person bean is created");
+            this.pet = pet;
+        }
+
+    // use
+    Person person = context.getBean("personBean", Person.class);    // correct
+    person.callYourPet();
+    Как произошло внедрение:
+        После сканирования нашлось 2 бина (personBean, catBean)
+        далее нашлась аннотация @Autowired (На конструкторе Person)
+        начался поиск бина с типом Pet(тот что в параметрах конструктора)
+        нашелся подходящий бин - catBean
+        внедрение зависимости
+
+        если не найдется подходящий бин - exception
+        если найдется более 1 подходящего бина(например dogBean) - exception
+
+    Использование с методом:
+    @Component("personBean")
+    class Person {
+        @Autowired      // пометим метод аннотацией
+        public void setPet(Pet pet) {
+            this.pet = pet;
+            System.out.println("Pet was set in Person");
+        }
+    
+    // use
+    Person person = context.getBean("personBean", Person.class);    // correct
+    person.callYourPet();
+    Как произошло внедрение:
+        все также как и при конструкторе происходит внедрение
+
+    Использование с полем:
+    @Component("personBean")
+    public class Person {
+        @Autowired
+        private Pet pet;
+    
+    // use
+    Person person = context.getBean("personBean", Person.class);
+    person.callYourPet();
+    Как произошло внедрение:
+        все также находятся бины, @Autowired, идет подстановка,
+        сдесь под капотом исп-ся Reflection. 
+
+    -- DI @Qualifier
+    Когда находится более чем 1 бин при @Autowired происходит exception.
+    Можно предотвратить указав какой бин должен быть внедрен с пом @Qualifier
+                        @Autowired
+                        @Qualifier("dogBean")   // выбор бина
+                        private Pet pet;
+                       /                \
+    @Component("catBean")                @Component("dogBean")
+    public Cat implements Pet {          public Dog implements Pet {   
+    
+    С полем и методом работает как и @Autowired.
+    С конструктором:
+        @Autowired
+        public Person(@Qualifier("catBean") Pet pet) {  // указываем в параметре
+
+    -- DI @Value
+    Для внедрения строк и других значений мож исп аннотацию @Value
+    Нет необходимости в сеттерах как при конфиге с пом xml.
+    Значения устанавливаются не с пом сеттеров, а с пом Reflection.
+
+    способ #1 -на месте
+    @Component("personBean")
+    public class Person {
+        private Pet pet;
+        @Value("Bond")  // устанавливаем значения пямо в классе
+        private String surname;
+        @Value("39")    // int тоже пишется в ковычках
+        private int age;
+    // use 
+    System.out.println(person.getSurname() + " " + person.getAge());    // correct
+
+    способ #2 -с пом .config файла (см конфигурацию without xml)
+    @Component("personBean")
+    public class Person {
+        private Pet pet;
+        @Value("${person.surname}") // подстановка знач из файла
+        private String surname;
+        @Value("${person.age}")
+        private int age;
+
+--- Bean scope ---
+    Scope - область видимости, определяет:
+        жизненный цикл бина
+        возможное кол-во создаваемых бинов
+    Разновидности bean scope:
+        создание из ApplicationContext:
+        singletone      // default, если не указан scope, 1 общий бин
+        prototype       // бины создаются каждый раз при обращении getBean()
+        создание из WebApplicationContext:
+        request         // новый бин для каждого http-запроса
+        session         // новый бин для каждой сессии
+        application     // на 1 сервлет - 1 сервлет
+        websocket       // на 1 сокет - 1 бин
+    
+    # xml
+    Singletone
+        <bean id="myPet"
+          class="io.github.ivan100kg.spring_intro.Dog"
+          scope="singleton">    // можно не указывать
+        </bean>
+    Этот бин создается сразу после прочтния контейнером конфиг файла.
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+                "applicationContext2.xml"
+        );
+        bean сдесь уже создан один и для всех.
+    Является общим для всех, кто запросит его у контейнера.
+        // получаем ссылки на бин
+        Dog dog1 = context.getBean("myPet", Dog.class);
+        Dog dog2 = context.getBean("myPet", Dog.class);
+        System.out.println(dog1 == dog2);   // true
+    Подходит для stateless объектов.(не хранящих состояния)
+
+    Prototype
+        <bean id="myPet"
+          class="io.github.ivan100kg.spring_intro.Dog"
+          scope="prototype">    // scope
+        </bean>
+    Такой бин создается только после обращения к контейнеру с пом getBean()
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+                    "applicationContext2.xml"
+        );
+        Dog dog1 = context.getBean("myPet", Dog.class); // создание
+    При каждом обращении создается новый бин.
+        Dog dog2 = context.getBean("myPet", Dog.class);
+        System.out.println(dog1 == dog2);   // false
+    Подходеит для stateful объектов.(хранящих состояние, например поле имя)
+
+    # annotations
+    @Component              @Component  
+    @Scope("singleton")     @Scope("prototype")
+    public class Dog        public class Cat 
+
+--- Life Cycle of bean ---
+    Запуск      -->  Начало работы     -->  Создание  -->  DI - внедряются
+    приложения       Spring Container       бина           зависимости
+                                                                  |
+    Конец работы  <--  Использование  <--  Бин готов для  <--  init-method
+    Spring Container  нами этого бина     использования
+          |
+    destroy-method  -->  Остановка
+                         приложения
+
+    До создания бинов происходит их сортировка согласно конфигурации, первыми
+    ставятся бины не зависящие от других, далее по нарастающей, потом для
+    каждого бина вызывается конструктор + сеттеры, после иниц всех их 
+    можно доставать из контейнера.
+
+    В контейнере хранятся только синглтоны, остальные создаются при каждом
+    обращении, но не хранятся.    
+
+    init-method используется для открытия или настройки каких-либо
+    ресурсов(базы данных, стримы ...). Вызывается автоматически, можно
+    использовать для запуска нашего кода при создании бина. Для scope = 
+    prototype - init будет вызываться для кажд создания бина.
+    
+    destroy-method используется для закрытия этих ресурсов. Тут пишется
+    логика после окончания работы с бином, перед его уничтожением. Также 
+    вызывается автоматически. Если scope=prototype то destroy НЕ вызывается.
+
+    # xml
+    Использование своего кода при init-method destroy-method:
+    // добавим методы в наш класс Dog(такие названия не обязательно),
+    модификаторы могут быть любыми
+    return-type может быть любым, но так как не исп-ся - используют void
+    параметров быть не должно.
+        private void init() {
+            System.out.println("class Dog: init method");
+        }
+        private void destroy() {
+            System.out.println("class Dog: destroy method");
+        }
+    // свяжем их в applicationContext.xml
+        <bean id="myPet"
+            class="io.github.ivan100kg.spring_intro.Dog"
+            init-method="init"          // методы можно называть как угодно
+            destroy-method="destroy">
+        </bean>
+    // теперь при создании и закрытии бина
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+                    "applicationContext2.xml"
+        );
+        // тут авто вызовется init() если scope НЕ prototype
+        Dog dog = context.getBean("myPet", Dog.class);
+        // тут авто вызовется init() для кажд бина если scope=prototype
+        dog.say();
+        context.close();
+        // тут авто вызовется destroy() если scope НЕ prototype
+    
+    # Java code
+    Правила теже, создаются с пом аннотаций.
+    @PostConstruct
+    @PreDestroy
+
+    Эти методы были выведены в Java 9, поэтому добавим зависимость в pom.xml
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>1.3.2</version>
+    </dependency>
+
+    // применение
+    @PostConstruct
+    private void init() {   // после создания бина
+        System.out.println("class Dog: init method");
+    }
+
+    @PreDestroy
+    private void destroy() {    // перед уничтожением(НЕ для prototype)
+        System.out.println("class Dog: destroy method");
+    }
+
+
+===========================================================================
+
+Spring AOP
+--- AOP Aspect Oriented Programming ---
+    Это парадигма программирования, основанная на идее разделения основного
+    и служебного функционала. Служебный ф-л записывается в Aspect-классы.
+    В основе Aspect заключена сквозная логика(cross-cutting logic).
+    Сквозная логика - это не бизнес функционал, это:
+        логирование
+        проверка прав(security check)
+        обработка транзакций
+        обработка исключений
+        кэширование
+    Бизнес логика - это основные/target методы.
+    
+    // пример Aspect класса в методах которого - сквозная логика
+        // aspect class             // основной функционал
+        class Aspect {              class Book {
+            logMethod()                 addBook()
+            secureCheckMethod()         
+    Итак при вызове addBook() класса Book из основной логики программы, перед
+    вызовом - вызовется logMethod() и secureCheckMethod() из сквозной логики.
+
+    AOP - это посредник/proxy между Main class программы и др основными классами.
+        Main class       AOP             Library class
+        вызов       -->  Proxy      -->  addBook()
+        addBook()        логи/права      выполнение
+
+    Сквозной ф-л сосредоточен в 1-м или неск классах - легко менять.
+    Благодаря конфигурации аспектов легко добавлять новый сквозные работы.
+    Бизнес-код(основной) избавляется от сквозного кода - чистый код.
+    Spring берет на себя сам обязанности по устройству AOP.
+
+    AOP frameworks:
+        Spring AOP  - прост в использовании, самая распространенная функ-ть
+        AspectJ     - сложный, вся фукциональность AOP
+
+--- Aspect class ---
+    Aspect - это Proxy класс отвечающий за сквозную функциональность.
+    // Пометим наш конфиг класс (здесь используется конфиг без xml)
+    @Configuration
+    @ComponentScan("mypacakge") // где сканировать бины
+    @EnableAspectJAutoProxy     // за кулисами используется Spring AOP Proxy
+    public class MyConfig {}
+
+    // Для Spring Boot ничего помечать не нужно
+
+    // Создадим класс Aspect, он будет отвечать за сквозную ф-ть
+    // добавим зависимость в pom
+        <!-- https://mvnrepository.com/artifact/org.aspectj/aspectjweaver -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>1.9.9.1</version>
+            <!--            <scope>runtime</scope> не нужен --> 
+        </dependency>
+        
+        # SpringBoot dependency
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-aop</artifactId>
+
+    // Aspect класс для логов, имя любое
+    @Component
+    @Aspect                     // пометим наш класс @Aspect
+    public class LoggingAspect {
+        @Before("execution(public void getBook())") // ниже описано
+        public void beforeGetBookAdvice() {         // название любое
+            System.out.println("beforeGetBookAdvice: trying to get the book");
+        }
+    }
+    Advice - термин AOP, метод внутри Aspect класса, который определяет 
+    что и когда должно произойти при вызове основного метода (у нас getBook)
+    Pointcut - выражение, опис где должен быть применен Advice.
+    Advice типы:
+    Before - выполняется до метода с осеновной логикой(getBook).
+    After returning - вып-ся после нормального окончания основного метода.
+    After throwing - вып-ся после основного метода если было исключение.
+    After/After finnaly - вып-ся после метода с основной логикой.
+    Around - вып-ся до и после метода с основной логикой.
+    // реализация, помечаем @Annotation("execution(method())")
+    @Before("execution(public void getBook())") - читается как: должно быть 
+    выполнено ДО выполнения медота getBook(), это и есть Pointcut.
+
+    // use
+    AnnotationConfigApplicationContext context =
+            new AnnotationConfigApplicationContext(MyConfig.class);
+    Library library = context.getBean("library", Library.class);
+    library.getBook();
+    context.close();
+    > beforeGetBookAdvice: trying to get the book   // наш Advice
+    > We are getting the book                       // основной метод
+
+    // обработка методов вызываемых другими методами в классе
+    не нашел как обработать например метод save который вызывается
+    не снаружи класса, а внутри класса другим методом
+
+--- Pointcut ---
+    Это выражение, описывающее где ложен быть применен Advice.
+    Spring AOP использует AspectJ Pointcut expression language, т.е.
+    определенные правила в написании выражений для создания Pointcut.
+    
+    @Before("execution(void getBook())")
+             -------------------------  // эта часть - pointcut
+    Общее правило, шаблон по которому ищется основной метод:
+    execution(modifiers? return-type method-class? method-name(params) throws?)
+    ? - необязательный параметр
+
+    Пример с указанием полного имени класса, для случаев если есть такие
+    же методы в других бинах(классах):
+    execution(void mypackage.Myclass.myMethod())
+
+    Use with Wildcards:
+    execution(void get*())      - методы начин-ся на get
+    (* getBook())               - методы getBook с любым return type
+    (* *)                       - метод без параметров с люб именем, mod, ret
+    (void getBook(String))      - void method getBook with 1 String param
+    (void *(*))                 - any void method with 1 any type param
+    (* *(..))                   - люб метод, любое кол-во любых параметров
+    (void get*(mypackage.Book)) - параметр пользовательский класс 
+    (* *(mypackage.Book, ..))   - первый парам - Book, далее 0 или более люб пар
+
+    Объявление Pointcut:
+    Для того чтобы не писать один и тот же pointcut для нескольких Advice
+    можно объявить Pointcut, затем использовать его на Advice много раз.
+    @Pointcut("pointcut_expression")    // выражение типа execution(void get*())
+    private void pointcut_ref(){}       // метод-ссылка без парам и тела
+    Если необходимо один и тот же pointcut использовать в разных
+    классах - можно вынести объявление в отдельный класс, а метод сделать public,
+    использовать такой pointcut можно по полному имени.
+
+    Использование на Advice:
+    @Before("pointcut_ref()")           // указываем тот метод-ссылку тут
+    public void advice_name(){code;}    // какой-то Advice
+    теперь можно использовать на множестве Advice
+
+    Плюсы Pointcut:
+    Можно использовать 1 pointcut для множества Advice и в сучае чего менять
+    код только в объявлении pointcut, а не по всем Advice.
+    Возможность комбинирования - удобно.
+
+    Комбинирование Pointcut:
+    Pointcut поддерживают их объединение с пом лог операторов && || !
+    // example with ||
+    @Pointcut("execution(void get*())")         // первый pointcut
+    private void allGetMethodsFromUL() {}
+
+    @Pointcut("execution(void return*())")      // второй pointcut
+    private void allReturnMethodsFromUL() {}
+    
+    // || - ИЛИ. Метод подходит под первый ИЛИ под второй pointcut 
+    @Pointcut("execution(void get*()) || execution(void return*())")
+    private void allGetAndReturnMethods(){}
+
+    // example with &&
+    @Pointcut("execution(* io.github.ivan100kg.aop.UniversityLibrary.*(..))")
+    private void allMethodsFromUL(){
+    }
+
+    @Pointcut("execution(public void returnMagazine())")
+    private void returnMagazineFromUL(){}
+
+    @Pointcut("allMethodsFromUL() && !returnMagazineFromUL()")
+    private void allMethodsExceptReturnMagazineFromUL(){}
+
+    // Advice под последний pointcut, обработ-ся все методы кроме returnMagazine()
+    @Before("allMethodsExceptReturnMagazineFromUL()")
+    public void beforeAllMethodsExceptReturnMagazineAdvice(){
+        System.out.println("beforeAllMethodsExceptReturnMagazineAdvice: Log #4");
+    }
+
+    Порядок выполнения pointcut:
+    Если один метод обрабатывают несколько Advice то порядок обработки
+    может быть разным в разное время.
+    Если важен порядок обработки метода - необходимо раскидать Advice по 
+    разным Aspect классам и пометить классы @Order(int) - порядок, 1 в приоритете
+    если @Order одинаковый - то что выпонится быстрее - рандом.
+
+    // вынесем объявление pointcut в отдельный класс, чтобы добраться до нашего
+    // другим классам - нужно будет указать полное имя
+    public class MyPointcuts {
+        @Pointcut("execution(* get*())")
+        public void allGetMethods() {
+        }
+    }
+
+    // создадим отдельные Aspect-классы для Advice обрабатывающих одинак методы
+    // рассмотрим один Asp будет похож на этот
+    @Component
+    @Aspect
+    @Order(1)   // меньше число - больше приоритет
+    public class SecurityAspect {
+        @Before("io.github.ivan100kg.aop.aspects.MyPointcuts.allGetMethods()")
+        public void beforeGetSecurityAdvice() {
+            System.out.println("beforeGetSecurityAdvice: check rights");
+        }
+    } 
+
+--- Join Point ---
+    Это точка/момент в выполняемой программе когда следует применять Advice.
+    Это точка переплетения метода с бизнес-логикой и метода со служебным ф-м.
+    Прописав Join Point в параметре метода Advice, мы получаем доступ к 
+    информации о сигнатуре и параметрах метода с бизнес-логикой.
+
+    // получить всю инфу об основном методе
+    @Before("io.github.ivan100kg.aop.aspects.MyPointcuts.allAddMethods()")
+    public void beforeAddLoggingAdvice(JoinPoint joinPoint) {
+        MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+        System.out.println("mS: " + mS);
+        System.out.println("mS.getName(): " + mS.getName());
+        System.out.println("mS.getMethod(): " + mS.getMethod());
+        System.out.println("mS.getParameterTypes(): " + Arrays.toString(mS.getParameterTypes()));
+        System.out.println("mS.getReturnType(): " + mS.getReturnType());
+        Object[] arguments = joinPoint.getArgs();   // аргументы
+        System.out.println(Arrays.toString(arguments));
+
+--- Advice Types ---
+    @Before
+    Выполняется до метода с основной логикой.
+    @Before("execution(* getStudents())")
+    public void beforeGetStudentsLoggingAdvice() {
+        System.out.println("beforeGetStudentsLoggingAdvice: log #2");
+    }
+
+    @AfterReturning
+    Вып-ся после нормального окончания основного метода, но до возврата 
+    значения из него, поэтому можно изменять возвращаемый результат.
+    // добавим в @AfterReturning через запятую именованные параметры
+    // pointcut = "execution(* getStudents())" - просто именованный pointcut
+    // returning = "students" - это то что возвращает основной метод
+    // добавим параметр в Advice List<Student> students - то что возвращ осн метод
+    // "students" должен совпадать с параметром Advice (students)
+    @AfterReturning(pointcut = "execution(* getStudents())", returning = "students")
+    public void afterReturningGetStudentsLoggingAdvice(List<Student> students) {
+        students.remove(0); // делаем любые манипуляции с возвращаемым obj
+                               после манипуляций будет возврат из основного мет
+                               уже измененного объекта.
+        System.out.println("afterReturningGetStudentsLoggingAdvice: log #10");
+    // если необходимо можно включать JoinPoint первым параметром
+
+    @AfterThrowing
+    Вып-ся после основного метода если возникло исключение.
+    // throwing = "myEx" ловим искл, должно совпадать с параметром Advice
+    // метод будет прерван, исключение будет проброшено выше, мы ничего
+    // не сможем предотвратить, но можем например залогировать.
+    // можем первым параметром включать JoinPoint
+    @AfterThrowing(pointcut = "execution(* getStudents())", throwing = "myEx")
+    public void afterThrowingGetStudentsLoggingAdvice(Throwable myEx){
+        System.out.println("afterThrowingGetStudentsLoggingAdvice: throws " + myEx);
+    }
+
+    @After
+    Вып-ся после оконч метода с основ логикой, в любом случае(с исключ или без).
+    // невозможно получить доступ к исключению, если выбросилось
+    // невозможно получить доступ к return параметру
+    @After("execution(* getStudents())")
+    public void afterGetStudentsLoggingAdvice(){
+        System.out.println("afterGetStudentsLoggingAdvice: log #12");
+    }
+
+    @Around
+    Вып-ся до и после метода с основной логикой. Можно провести след действия:
+        -произвести какие-либо действия до работы target метода
+        -произвести какие-либо действия после работы target метода
+        -получить/изменить результат работы target метода
+        -предпринять какие-либо действия, если из target выбрас исключение
+    // добавим в параметры метода ProceedingJoinPoint - это связь с target методом
+    // ProceedingJoinPoint обладает тем же ф-м что и JoinPoint
+    // изменим return type на Object который явл результатом point.proceed()
+    @Around("execution(String returnBook())")
+    public Object aroundLoggingAdvice(ProceedingJoinPoint point) throws Throwable {
+        System.out.println("Before target method");
+        Object targetResult = point.proceed();      // вызов target метода
+        System.out.println("After target method");
+        return targetResult;                        // результат
+    }
+    // можно изменить результат перед возвратом на любой
+    // например можно засечь время выполнения target метода с пом @Around
+        System.out.println("Before target method");
+        long start = System.currentTimeMillis();
+        Object targetResult = point.proceed();
+        System.out.println("After target method");
+        System.out.println("time: " + (System.currentTimeMillis() - start));
+        return targetResult;
+    При выбрасывании исключения в target методе можно делать следующее:
+        -ничего не предпринимать
+        -обработать исключение, завернуть point.proceed() в try-catch
+        -проброс исключения дальше/выше:
+        System.out.println("Before target method");
+        Object targetResult = null;
+        try {
+            targetResult = point.proceed();
+        } catch (IllegalStateException ex) {
+            System.out.println("Caught: " + ex.getMessage());
+            throw ex;   // проброс/rethrowing
+        }
+        System.out.println("After target method");
+        return targetResult;
+
+===============================================================================
+
+Spring MVC
+--- MVC ---
+    Model View Controller - шаблон проектирования web приложений.
+    Model       - данные приложения и работа с ними(чаще в БД)
+    View        - внешний вид отображение данных, взаимод с пользователем
+    Controller  - связь между View и Model. Бизнес логика приложения.
+
+    Spring MVC  - фреймворк для создания web-app на Java, на базе MVC.
+    Можно использовать основной ф-л Spring: IoC, DI.
+
+    Схема работы Spring MVC:
+    Б  request                delegate req                handle req
+    Р ---------> |Front     | -------------> |Controller| ----------> |Backend|
+    А <--------- |Controller| <--model------ |__________| <---------- |_______|
+    у  responce    ^    |   delegate rendering  
+    З              |    |
+    Е              |    |           render responce
+    Р              |    +---model--> |View    |
+                   +---------------- |Template|
+                                    return control
+    
+    Front Controller    - (DispatcherServlet(Tomcat)) - делегирует 
+                          HTTP-запросы обычным контроллерам
+    Controller          - центр управленияб мозг Spring MVC приложения.
+    Model               - контейнер для хранения данных.
+    View                - web страница, кот можно создать с пом HTML, JSP, Thymeleaf и т.д.,
+                          часто при отображении View используют данные из Model.
+
+    Для создания web-страниц можно использовать:
+    JSP (Java Server Page) - спецификация: HTML + Java code.
+    JSTL (Java Server Pages Standart Tag Library) - расширение спец-ии JSP.
+    JSP конвертируется в обычный HTML при отправки ответа.
+
+    Состав Spring MVC приложения:
+        Конфигурация Spring(обычная xml/annotations/java code)
+        Описание Spring бинов(+доп аннотации)
+        Web страницы
+
+--- Configuration ---
+    1. Create Maven project with archetype: "maven-archetype-webapp"
+    2. Add dependencies to pom.xml [Spring Context,
+                                    Spring Core, 
+                                    Spring Beans,
+                                    Spring Web,
+                                    Spring Web MVC,
+                                    JavaServlet(TM) Specification,
+                                    JSTL(где больше usages)]
+    3. Download Tomcat, разархивируем архив. Добавим в Idea 
+       -> run -> Edit Configurations -> + -> Tomcat Server Local ->
+       -> configure -> выбираем dir где tomkat -> ok -> ok -> fix ->
+       -> exploded -> apply -> ok 
+       запускаем: run -> run 'tomkat'
+    4. Add dirs/packages
+       sourse root: main/java
+       my packages: main/java/io.github.ivan100kg
+       my views:    webapp/WEB-INF/view
+    5. Configure webapp/WEB-INF/web.xml
+    6. Create+Configure webapp/WEB-INF/applicationContext.xml
+
+    # web.xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+            xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+            id="WebApp_ID" version="3.1">
+
+    <display-name>spring-cource-mvc</display-name>
+
+    <absolute-ordering />
+
+    <servlet>
+        <servlet-name>dispatcher</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>/WEB-INF/applicationContext.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>dispatcher</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+    </web-app>
+
+    Все стандартно кроме param-value - пишем свой конфиг файл,
+                         url-pattern - / (любой url)
+
+    # applicationContext.xml
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:mvc="http://www.springframework.org/schema/mvc"
+        xsi:schemaLocation="
+            http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/context
+            http://www.springframework.org/schema/context/spring-context.xsd
+            http://www.springframework.org/schema/mvc
+            http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+        <context:component-scan base-package="io.github.ivan100kg" />
+
+        <mvc:annotation-driven/>
+
+        <bean
+                class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+            <property name="prefix" value="/WEB-INF/view/" />
+            <property name="suffix" value=".jsp" />
+        </bean>
+
+    </beans>
+    
+    Бин тут для простоты обращения к своим view, которые будут созданы 
+    в /WEB-INF/view/. Например /WEB-INF/view/myView.jsp можно будет
+    использовать как myView - префикс и суффикс допишется авто.
+
+--- Controller ---
+    @Controller                         // класс - контроллер (это @Component)
+    public class MyController {
+        @RequestMapping("/")            // связывает URL '/' c  -->--------+
+        public String showFirstView(){  // люб назв, мог быть парам-ры     |
+            return "first-view";        // webapp/WEB-INF/first-view.jsp <-+
+        }
+    }
+
+    При обращении на сервер на корневую страницу отобразится след файл:
+    # WEB-INF/view/first-view.jsp
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Title</title>
+    </head>
+    <body>
+        <h2>I wish you luck in Spring MVC learning</h2>
+    </body>
+    </html>
+
+    Можно использовать @RequestMapping на самом Контроллере(Controller-mapping)
+    Удобен для создания нескольких контроллеров, каждый под свой URL.
+    @Controller
+    @SessionAttributes("tacoOrder") // имена атрибутов модели, хранятся в сессии
+    @RequestMapping("/emp") // корень, будет приписываться ко всем url методов
+    @RequestMapping(path="/emp", method=RequestMethod.GET)  // обработка только
+                                                               GET методов
+    @GetMapping("/emp")     // аналог тому что выше - только GET запросы 
+    @PostMapping("/")       // только POST запросы                                                 
+
+--- Using data in views ---
+    Чтение данных из формы:
+       GET url: /askDetails      C
+    Б -------------------------> O
+    Р                            N 
+    А <------ view/page1.jsp --- T
+    У                            R
+    З  POST url: /showDetails    O
+    Е -------------------------> L
+    Р                            L              
+      <------view/page12.jsp --- E
+                                 R
+
+    # MyController.java - добавим 2 обработчика
+    @RequestMapping("/askDetails")          // url
+    public String askDetails() {            // 
+        return "ask-emp-details-view";      // view
+    }
+
+    @RequestMapping("/showDetails")
+    public String showDetails() {
+        return "show-emp-details-view";
+    }
+
+    # view/ask-emp-details.jsp(теги html,body.. не показаны)
+    <h2>Dear Employee, Please enter your details</h2>
+    <form action="showDetails" method="get">                // action go to url
+        <label for="n1">Your name:</label> <br>
+        <input type="text" id="n1" name="employeeName">     // employeeName -+
+        <input type="submit"/>                                               |
+    </form>                                                                  |
+                                                                             |
+    # view/show-emp-details.jsp(теги html,body.. не показаны)                |
+    <h2>Dear Employee, you are WELCOME!!!</h2>                               |
+    <p>Your name: ${param.employeeName}</p>                 // из формы <----+
+
+--- Add/extract data to/from Model ---
+    # 1 способ с пом HttpServletRequest
+    @RequestMapping("/showDetails")
+    public String showDetails(HttpServletRequest request, Model model) {
+        String empName = request.getParameter("employeeName");  // параметр из 
+        empName = "Mister " + empName;                             view
+        model.addAttribute("nameAttr", empName);                // добавим данн
+        return "show-emp-details-view";                            в модель(ключ
+    }                                                              -значение)
+    HttpServletRequest request  - для работы с запросом, много полезных ф-ий
+    Model model                 - модель, можно добавлять различные ключи-знач
+                                  ключ - String, значение - Object(люб тип)
+
+    # 2 способ с пом @RequestParam
+    @RequestMapping("/showDetails")     // URL '/showDetails'
+    public String showDetails(@RequestParam("employeeName") String s, Model m) {
+        s = "Mister " + s;                          |
+        m.addAttribute("nameAttr", s); -->----------+-----------------------+
+        return "show-emp-details-view";             |                       |
+    }                                               |                       |
+                                                    |                       |
+    # view/ask-emp-details.jsp                      |                       |
+    <form action="showDetails" method="get">        ^                       |
+        <label for="name">Your name:</label> <br>   |                       |
+        <input type="text" id="name" name="employeeName">                   |
+        <input type="submit"/>                                              |
+    </form>                                                                 |
+                                                                            |
+    # view/show-emp-details.jsp                                             |
+    <h2>Dear Employee, you are WELCOME!!!</h2>                              |
+    <p>Your name: ${nameAttr}</p>   // изъять данные по ключу из модели <---+
+
+    @RequestParam("employeeName") - связывает поле формы(name="employeeName")
+    с параметром метода из Controller(showDetails).
+
+--- Spring MVC Forms ---
+    form:form   - основная форма-контейнер (форма с другими формами)
+    form:input  - форма для текста, используется 1 строка
+    form:select - выпадающий список
+
+    Для использования форм в jsp/html файлах необходимо добавить в файл:
+    <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+
+    Создаем класс Employee с полями, no-args constructor, getters-setters.
+    public class Employee {
+        private String name;
+        private String surname;
+        private int salary; 
+
+    Далее добавляем в модель наш класс Employee под ключем 'employee',
+    можно уже тут задать значения каким то полям - либо будут по умолчанию,
+    просто в модель можно добавить уже готовый Employee а не новый:
+    @RequestMapping("/askDetails")
+    public String askDetails(Model model) {
+        model.addAttribute("employee", new Employee()); ---------+
+        return "ask-emp-details-view";                           |
+    }                                                            |
+                                                                 |
+    Создаем форму ask-emp-details.jsp:                                               |
+    <form:form action="showDetails" modelAttribute="employee"> <-+
+        name <form:input path="name"/> <br>         // поля класса Employee
+        surname <form:input path="surname"/> <br>   // ..
+        salary <form:input path="salary"/> <br>     // ..
+        <input type="submit" value="Ok">            // отправить данные
+    </form:form>
+    При отображении формы вызываются Employee getters.
+    После ввода данных и нажатия 'Ok' - вызываются Employee setters, 
+    идет перенаправление на action="showDetails" - др метод Контроллера.
+
+    Для работы с моделью, а именно с одним из ее аттрибутов(ключ-знач),
+    добавим аннотац @ModelAttribute("employee") в параметры. Теперь можно
+    использовать модель во view ниже. Также тут можно менять значения
+    emp перед отправкой как угодно.
+    @RequestMapping("/showDetails")
+    public String showDetails(@ModelAttribute("employee") Employee emp) {
+        emp.salary += 200;  // изменяю как хочу
+        return "show-emp-details-view";
+
+    Отображение данных из модели(ключ 'employee') show-emp-details.jsp:
+    <p>
+        Your name: ${employee.name}<br>         // обращение к полям Employee
+        Your surname: ${employee.surname}<br>      через ключ 'employee' модели
+        Your salary: ${employee.salary}
+    </p>
+
+--- Select Form ---
+    # 1 способ - указать значения прямо в jsp файле    
+    <form:form action="showDetails" modelAttribute="employee">
+        ...
+        department <form:select path="department">
+            <form:option value="Information Technology" label="IT"/>
+            <form:option value="Human Resources" label="HR"/>
+            <form:option value="Sales" label="Sales"/>
+        </form:select> <br>
+        <input type="submit" value="Ok">
+    </form:form>
+
+    form:option - один из вариантов выпадающего списка
+    value       - значение поля
+    label       - отображение в выпадающем списке
+
+    # 2 способ - создать Map в классе Employee
+    Инициализируем своими значениями в иниц блоке/конструкторе
+    В итоге ключи Map - это value, значения - label в форме.
+    private Map<String, String> departments;
+    {
+        departments = new HashMap<>();
+        departments.put("IT", "Information Technology");
+        departments.put("HR", "Human Resources");
+        departments.put("Sales", "Sales");
+        departments.put("Cleaning", "Cleaning");
+    }
+
+    Отображение:
+    <form:form action="showDetails" modelAttribute="employee">
+        ...
+        department <form:select path="department">
+            <form:options items="${employee.departments}"/>
+        </form:select> <br>
+        <input type="submit" value="Ok">
+    </form:form>
+
+    path="department"               - поле которому присваивается значение
+    form:options                    - принимает мап
+    items="${employee.departments}" - указать мап(выбор варианта)
+
+--- Radiobutton Form ---
+    # 1 способ хардокдый - Создадим 3 кнопки в form:form:
+    ...
+    BMW <form:radiobutton path="carBrand" value="BMW"/>
+    Audi <form:radiobutton path="carBrand" value="Audi"/>
+    Toyota <form:radiobutton path="carBrand" value="Toyota"/>
+    ...
+    При отправке формы вызывается сеттер.
+
+    # 2 способ - создадим Мап в Employee и иниц ее своими значениями:
+    carBrands = new HashMap<>();
+    {   // можно в иниц блоке
+        carBrands.put("BMW", "BMW");
+        carBrands.put("Audi", "Audi");
+        carBrands.put("Toyota", "Toyota");
+        carBrands.put("Ford", "Ford");
+    }
+    ...
+    <form:radiobuttons path="carBrand" items="${employee.carBrands}"/>
+    ...
+
+    При отправки формы вызывается сеттер для поля Employee (path="carBrand")
+    и присваивается значение из вариантов в employee.carBrands(мэпка).
+
+--- Checkbox Form ---
+    Объявить в Employee массив строк languages.
+
+    # 1 способ - все чекбоксы объявляем в jsp в form:form:
+    ...
+    ENG <form:checkbox path="languages" value="English"/>
+    FRA <form:checkbox path="languages" value="France"/>
+    JPN <form:checkbox path="languages" value="Japan"/>
+    ...
+    path="languages"    - массив Employee / параметр сеттера для масива
+    value="English"     - 1 значение в массиве
+
+    Отобразить элементы массива в show-...jsp:
+    <c:forEach var="lang" items="${employee.languages}">    // forEach
+        <li>${lang}</li>                                    // по всем эл
+    </c:forEach>
+
+    # 2 способ - создадим Map и иниц ее в кострукторе/блоке:
+    myLanguages = new HashMap<>();
+    myLanguages.put("EN", "English");
+    myLanguages.put("FR", "France");
+    myLanguages.put("DE", "German");
+
+    В ask-...jsp прописываем в form:form:
+    ...
+    <form:checkboxes path="languages" items="${employee.myLanguages}"/>
+    ...
+    items="${employee.myLanguages}" - наш хэшмэп
+    остальное также как выше
+
+--- Valid Forms ---
+    Java Standart Bean Validation API - спецификация, которая описывает
+    правила валидации.
+    Hibernate Validator - реализация правил этой спецификации.
+
+    Добавим зависимости в pom.xml
+    <!-- https://mvnrepository.com/artifact/org.hibernate.validator/hibernate-validator -->
+    <dependency>
+        <groupId>org.hibernate.validator</groupId>
+        <artifactId>hibernate-validator</artifactId>
+        <version>6.2.0.Final</version>
+    </dependency>
+
+    Size - кол-во символов
+    Добавим в Employee над полями:
+    @Size(min = 2, max = 15, message = "wrong length")
+    private String name;
+    min     - минимальная длина текста
+    max     - максимальная длина текста
+    message - сообщ если неправ --------+ (есть вариант по умолч)
+                                        |
+    Добавим в ask...jsp в форму         |
+    <form:input path="name"/>           |
+    <form:errors path="name"/>   <------+ отображение сообщ об ошибке
+    поле ввода и сообщение об ошибке привязываются к аттр path="name"
+
+    Добавим аннотацию @Valid и BindingResult в метод контроллера:
+    @RequestMapping("/showDetails")
+    public String showDetails(@Valid @ModelAttribute("employee") Employee emp,
+                              BindingResult bindingResult) {
+        if (bindingResult.hasErrors())      // если валидация не прошла
+            return "ask-emp-details-view";  // вернуть ту же страницу
+        else
+            return "show-emp-details-view"; // если все гуд вернуть другую
+    }
+    Параметр BindingResult должен идти после аттрибута модели, в случае
+    если параметров много.
+
+    NotEmpty - не null и не должно быть пустым
+    @NotEmpty(message = "surname is required field")
+    private String surname;
+    Также добавляем во view отображение этой проверки
+    surname <form:input path="surname"/>
+    <form:errors path="surname"/> <br>
+
+    @NotNull    - не null поле
+    @NotBlank   - не null, не пустое, не состоит из одних пробелов
+
+    Min        - числовое значение >= параметра
+    Max        - числовое значение <= параметра
+    @Min(value = 200, message = "must be greater than 199")
+    @Max(value = 900, message = "must be less than 901")
+    private int salary;
+    Добавить отображение в форму
+    salary <form:input path="salary"/>
+    <form:errors path="salary"/><br>
+
+    Валидация строки по шаблону с исп рег выражения
+    @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "use yyyy-mm-dd")    
+
+--- Own validator ---
+    // Создать аннотацию
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Constraint(validatedBy = CheckEmailValidator.class)
+    public @interface CheckEmail {
+        public String value() default "xyz.com";
+        public String message() default "not valid email";
+        public Class<?>[] groups() default {};
+        public Class<? extends Payload> [] payload() default {};
+    }
+
+    // Создать класс
+    public class CheckEmailValidator 
+                implements ConstraintValidator<CheckEmail, String> {
+        private String endOfEmail;
+        @Override
+        public void initialize(CheckEmail checkEmail) {
+            endOfEmail = checkEmail.value();
+        }
+        @Override
+        public boolean isValid(String enteredValue, 
+                    ConstraintValidatorContext constraintValidatorContext) {
+            return enteredValue.endsWith(endOfEmail);
+        }
+    }
+
+    // пропишем в Employee(можно переопределить default знач value, message)
+    @CheckEmail
+    private String email;
+
+    // валидация в форме
+    Email <form:input path="email" />
+    <form:errors path="email"/> <br>
+
+    // отображение если все норм
+    Your email: ${employee.email}
+
+Spring MVC + Hibernate + AOP
+--- Configuration ---
+    1. Create Maven project with archetype: "maven-archetype-webapp"
+    2. Set Database and Tables
+    3. Add dependencies into pom.xml
+        Spring Web MVC(Spring Core Context Beans are included)
+        JSTL
+        Hibernate Core Relocation(запустилась на 5.6.9.Final)
+        PostgreSQL JDBC Driver
+        C3P0
+        Spring Object/Relational Mapping
+    4. Add Tomkat(9 или 8)
+    5. Configure web.xml
+    6. configure applicationContext.xml
+
+    Note: dialect появляется не сразу, надо перезагрузить/потанцевать 
+
+    # web.xml --------------------------------------------------------
+    <?xml version="1.0" encoding="UTF-8"?>
+    <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+            xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+            id="WebApp_ID" version="3.1">
+
+    <display-name>spring-cource-mvc-hibernate-aop</display-name>
+
+    <absolute-ordering />
+
+    <servlet>
+        <servlet-name>dispatcher</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>/WEB-INF/applicationContext.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>dispatcher</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+    </web-app>
+
+    # applicationContext.xml ---------------------------------------------
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xmlns:mvc="http://www.springframework.org/schema/mvc"
+        xmlns:tx="http://www.springframework.org/schema/tx"
+        xsi:schemaLocation="
+            http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/context
+            http://www.springframework.org/schema/context/spring-context.xsd
+            http://www.springframework.org/schema/mvc
+            http://www.springframework.org/schema/mvc/spring-mvc.xsd
+            http://www.springframework.org/schema/tx
+            http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+        <context:component-scan base-package="io.github.ivan100kg.spring.mvc_hibernate_aop" />
+
+        <mvc:annotation-driven/>
+
+        <bean
+                class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+            <property name="prefix" value="/WEB-INF/views/" />
+            <property name="suffix" value=".jsp" />
+        </bean>
+
+        <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+            destroy-method="close">
+            <property name="driverClass" value="org.postgresql.Driver" />
+            <property name="jdbcUrl" value="jdbc:postgresql://localhost:5432/my_db?useSSL=false&amp;serverTimezone=UTC" />
+            <property name="user" value="bestuser" />
+            <property name="password" value="bestuser" />
+        </bean>
+
+        <bean id="sessionFactory"
+            class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+            <property name="dataSource" ref="dataSource" />
+            <property name="packagesToScan" value="io.github.ivan100kg.spring.mvc_hibernate_aop.entity" />
+            <property name="hibernateProperties">
+                <props>
+                    <prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQL95Dialect</prop>
+                    <prop key="hibernate.show_sql">true</prop>
+                </props>
+            </property>
+        </bean>
+
+        <bean id="transactionManager"
+            class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+            <property name="sessionFactory" ref="sessionFactory"/>
+        </bean>
+
+        <tx:annotation-driven transaction-manager="transactionManager" />
+
+    </beans>
+
+--- Project Structure ---
+    Browser <==> Controller <==> Service <==> DAO <==> Database
+        +-- view
+    
+    DAO (Data Access Object) - ответственный за работу(через Hibernate) с БД 
+    (CRUD), это Java class например Employee. Это вспомогательный элемент. 
+    Но так делать лучше чем напрямую из Контроллера обращаться к БД. Может быть
+    множество DAO - каждый под свои Entity+Table.
+
+    Service - связь контроллера с DAO(1+), service сам решает к какому DAO 
+    обращаться(и нужно ли вообще). В Controller вызывается метод Service -
+    в нем будет прописана бизнес логика, сервис если необходимо обращается
+    к нужному DAO для получения данных из БД.
+
+    Элементы проекта(создадим под все эл свои пакеты):
+    1. Create Entity class 
+    // Добавить требуемые элементы для Entity(см. Hibernate).
+    // entity.Employee
+    @Entity // запустилось от сюда: import javax.persistence.*;
+    @Table(name = "employees")  // таблица employees
+    public class Employee { ...
+
+    2. Create DAO
+    // Для хорошего тона необх создать интерфейс + класс импл этот интерфейс
+    // dao.EmployeeDAO
+    public interface EmployeeDAO {
+        public List<Employee> getAllEmployees();
+    }
+
+    // собственно сам DAO, для того чтобы он мог подключаться к БД - свяжем
+       его с бином(прописанном в xml) с sessionFactory
+    // dao.EmployeeDAOImpl
+    @Repository // Используется для DAO (@Component included (это бин))
+    public class EmployeeDAOImpl implements EmployeeDAO {
+        @Autowired
+        private SessionFactory sessionFactory;  // DI
+
+        @Override
+        public List<Employee> getAllEmployees() {
+            // сделаем запрос в БД и вернем результат
+            Session session = sessionFactory.getCurrentSession();
+            List<Employee> allEmployees = session.createQuery("FROM Employee",
+                    Employee.class).getResultList();
+            return allEmployees;
+        }
+    }
+
+    4. Create Service
+    // Также создаем interface + class (impl this interface)
+    // service.EmployeeService
+    public interface EmployeeService {
+        public List<Employee> getAllEmployee();
+    }
+
+    // service.EmployeeServiceImpl
+    @Service    // класс(@Component) с бизнес-лог, соед звено Controller-DAO 
+    public class EmployeeServiceImpl implements EmployeeService{
+        @Autowired
+        private EmployeeDAO employeeDAO;            // связать с бином DAO
+
+        @Override
+        @Transactional  // авто открытие/закрытие транзакций
+        public List<Employee> getAllEmployee() {
+            return employeeDAO.getAllEmployees();   // вернуть через DAO
+        }                                              данные из БД
+    }
+
+    3. Creare Controller
+    // controller.MyController
+    @Controller
+    public class MyController {
+
+        @Autowired
+        private EmployeeService employeeService;    // свяжем Service
+
+        @RequestMapping("/")                // url
+        public String showAllEmployees(Model model) {
+            // достанем результат из БД с пом Servise-DAO и добавим в модель
+            List<Employee> allEmployees = employeeService.getAllEmployees();
+            model.addAttribute("allEmps", allEmployees);
+            return "all-employees";         // вернуть view
+        }
+    }
+
+    4. Creaate view
+    // WEB-INF/views/all-employees.jsp
+    // Пробегаем в forEach по allEmps(список что добавили в модель выше)
+    ...
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Surname</th>
+            <th>Department</th>
+            <th>Salary</th>
+        </tr>
+        <c:forEach var="emp" items="${allEmps}">
+            <tr>
+                <td>${emp.name}</td>
+                <td>${emp.surname}</td>
+                <td>${emp.department}</td>
+                <td>${emp.salary}</td>
+            </tr>
+        </c:forEach>
+    </table>
+    ...
+
+--- Create/Insert ---
+    Actions:
+    Добавляем кнопку 'Add' на глав страницу all-employees.jsp, при нажатии
+    которой вызывается метод контроллера(создаем) addNewEmployee().
+    Метод addNewEmployee() создает пустого Employee, добавляет его в модель
+    и возвращает view(создаем) employee-info.jsp.
+    View employee-info.jsp содержит форму для заполнения полей Employee,
+    после нажатия submit кнопки форма отправляется на url '/saveEmployee'.
+    Создадим новый метод в MyController для обработки '/saveEmployee' с 
+    таким же названием saveEmployee, достаем данные из формы с помощью
+    модели: @ModelAttribute("employee") Employee employee и передаем
+    employee в сервис EmployeeServiceImpl, в метод(создаем в интерфейсе 
+    EmployeeService и импл EmployeeServiceImpl) saveEmployee(employee).
+    В этом методе вызыв одноименный метод у DAO (также создаем в EmployeeDAO 
+    и импл в EmployeeDAOImpl этот метод saveEmployee(employee)) в этом методе
+    уже сохраняем employee в БД. После всех манипуляций метод Контроллера
+    saveEmployee возвращает редирект на глав страницу уже с новым работником.
+
+    To MyController add method:
+    @RequestMapping("/addNewEmployee")              // url <----------------+
+    public String addNewEmployee(Model model){                              |
+        Employee employee = new Employee();         // new Employee         |
+        model.addAttribute("employee", employee);   // add to Model         |
+        return "employee-info";                     // return view(см ниже) |
+    }                                                                       |
+                                                                            |
+    To all-employees.jsp add button:                                        |
+    <input type="button" value="Add"                                        |
+           onclick="window.location.href = 'addNewEmployee'"> -->-----------+
+
+    Create views/employee-info.jsp:
+    <form:form action="saveEmployee" modelAttribute="employee"> -->---------+
+        Name <form:input path="name"/> <br>                                 |
+        Surname <form:input path="surname"/> <br>                           |
+        Department <form:input path="department"/> <br>                     |
+        Salary <form:input path="salary"/> <br>                             |
+        <input type="submit" value="ok">                                    |
+    </form:form>                                                            |
+                                                                            |
+    Add new method to EmployeeDAO and EmployeeDAOImpl:                      |
+    // EmployeeDAO.java                                                     |
+    public void saveEmployee(Employee employee);    // добавим в интерфейс  |
+    // EmployeeDAOImpl.java                                                 |
+    @Override                                       // переопределим        |
+    public void saveEmployee(Employee employee) {                           |
+        Session session = sessionFactory.getCurrentSession();               |
+        session.save(employee);                     // сохраняем в БД       |
+    }                                                                       |
+                                                                            |
+    Add new method to EmployeeService and EmployeeServiceImpl:              |
+    // EmployeeService.java                                                 |
+    public void saveEmployee(Employee employee);    // добавим в интерфейс  |
+    // EmployeeServiceImpl.java                                             |
+    @Override                                       // переопределим        |
+    @Transactional                                                          |
+    public void saveEmployee(Employee employee) {                           |
+        employeeDAO.saveEmployee(employee);         // через DAO сохр в БД  |
+    }                                                                       |
+                                                                            |
+    Add new method to MyController:                                         |
+    @RequestMapping("/saveEmployee")                // url <----------------+                
+    public String saveEmployee(@ModelAttribute("employee") Employee employee) {
+        employeeService.saveEmployee(employee);     // сохр чер Srvice-DAO в БД
+        return "redirect:/";                        // редирект на url: '/' -+
+    }                                                  showAllEmployees   <--+
+
+--- Update ---
+    Actions:
+    Добавим во view all-employees.jsp кнопки Update для каждого работника,
+    кнопка будет вызывать метод(создать) контроллера updateInfo и передавать
+    ему id работника. Метод updateInfo будет получать работника по id из 
+    БД через методы getEmployee(int id) у Service/DAO. Далее updateInfo 
+    будет добав в модель готового работника и возвращать employee-info.jsp,
+    в итоге форма в employee-info.jsp уже будет заполнена записями из БД,
+    далее меняем что нужно и подтверждаем, вызывается метод saveEmployee.
+    Метод saveEmployee получает работника из @ModelAttribute, но id не 
+    получает(id назнач в БД автоинкр) - следовательно создадим в employee-info
+    скрытую форму для id <form:hidden path="id"/>. Теперь когда будет возвращ
+    employee-info.jsp из метода updateInfo - поле 'id' будет не пустым. И уже
+    при отправке формы id будет не пустым(ноль 0) как при создании нового emp.
+    Логично так как поле id устанавливается по умолчанию. В DAO saveEmployee 
+    просто прописываем if ..если id==0 -> создать, если не 0 -> изменить,
+    либо просто session.saveOrUpdate(employee) - все под капотом.
+
+    Add button to all-employees.jsp:
+    <c:forEach var="emp" items="${allEmps}">            // forEach по записям
+        <c:url var="updateButton" value="/updateInfo">  // создаем ссылку <-+
+            <c:param name="empId" value="${emp.id}"/>   // перед параметр   |
+        </c:url>                                                            |
+        <tr>                                                                |
+            <td>${emp.name}</td>                                            |
+            <td>${emp.surname}</td>                                         |
+            <td>${emp.department}</td>                                      |
+            <td>${emp.salary}</td>                                          |
+            <td><input type="button" value="Update"     // кнопка ссылающ --+
+                onclick="window.location.href = '${updateButton}'"></td>
+        </tr>
+    </c:forEach>
+
+    Add method updateInfo(int id) to MyController:
+    @RequestMapping("/updateInfo")
+    public String updateInfo(@RequestParam("empId") int id, Model model) {
+        Employee employee = employeeService.getEmployee(id);    // get Emp
+        model.addAttribute("employee", employee);               // доб в мод
+        return "employee-info";                                 // view
+    }
+
+    Add methods to EmployeeDAO and impl in EmployeeDAOImpl:
+    public Employee getEmployee(int id);    // EmployeeDAO
+    @Override                               // EmployeeDAOImpl
+    public Employee getEmployee(int id) {
+        Session session = sessionFactory.getCurrentSession();
+        return session.get(Employee.class, id); // получаем работника из БД
+    }
+
+    Add methods to EmployeeService and impl in EmployeeServiceImpl:
+    public Employee getEmployee(int id);    // EmployeeService
+    @Override                               // EmployeeServiceImpl
+    @Transactional
+    public Employee getEmployee(int id) {
+        return employeeDAO.getEmployee(id);
+    }
+
+    Add hidden field to form to employee-info.jsp:
+    <form:form action="saveEmployee" modelAttribute="employee">
+        <form:hidden path="id"/>    // скрытая форма для id
+        ...
+
+    Update saveEmployee in EmployeeDAOImpl:
+    @Override
+    public void saveEmployee(Employee employee) {
+        Session session = sessionFactory.getCurrentSession();
+        session.saveOrUpdate(employee); // если id==0 -> новая запись
+    }                                      либо обновить существ запись
+
+--- Delete ---
+    Actions:
+    Дообавим кнопку во view, пропишем c:url для нее как и в случае с Update,
+    также при нажатии будем вызывать метод(создать) из котроллера deleteEmployee,
+    связав его с этой кнопкой, с url '/deleteEmployee'. Этот метод будет
+    возвращать редирект на глав страницу. Пропишем одноименные методы в 
+    Service и DAO, по цепочке будут они вызываться и удалять нужную
+    запись из БД по id.
+
+    Add button and <c:url> to all-employees.jsp:
+    <c:url var="deleteButton" value="/deleteEmployee">
+        <c:param name="empId" value="${emp.id}"/>
+    </c:url>
+    ...
+    <input type="button" value="Delete" onclick="window.location.href = '${deleteButton}'"/>
+    
+    Add method to MyController:
+    @RequestMapping("/deleteEmployee")
+    public String deleteEmployee(@RequestParam("empId") int id) {
+        return "redirect:/";
+    }
+
+    Add method to Service:
+    void deleteEmployee(int id);    // EmployeeService
+    @Override                       // EmployeeServiceImpl
+    @Transactional
+    public void deleteEmployee(int id) {
+        employeeDAO.deleteEmployee(id);
+    }
+
+    Add method to DAO:
+    void deleteEmployee(int id);    // EmployeeDAO
+    @Override                       // EmployeeDAOImpl
+    public void deleteEmployee(int id) {
+        Session session = sessionFactory.getCurrentSession();
+        session.createQuery("delete from Employee where id=:employeeId")
+                .setParameter("employeeId", id)
+                .executeUpdate();
+    }
+
+--- Add AOP ---
+    Configuration:
+    Add dependency to pom.xml:
+        AspectJ Weaver(<scope>runtime</scope> закомментим)
+    Update applicationContext.xml:
+        ...
+        xmlns:oap="http://www.springframework.org/schema/aop"
+        ...
+        http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop.xsd
+        ...
+        <aop:aspectj-autoproxy/>
+        ...
+    
+    Create package aspect and Aspect classes:
+    Advice будет перехватывать все методы в пакете dao и выводить в консоль лог
+    @Component
+    @Aspect
+    public class MyLoggingAspect {
+        @Around("execution(* io.github.ivan100kg.spring.mvc_hibernate_aop.dao.*.*(..))")
+        public Object aroundAllRepositoryMethodAdvice
+                (ProceedingJoinPoint point) throws Throwable{
+            MethodSignature signature = (MethodSignature) point.getSignature();
+            String methodName = signature.getName();
+            System.out.println("Begin of " + methodName);
+            Object target = point.proceed();
+            System.out.println("End of " + methodName);
+            return target;
+        }
+    }
+
+
+=======================================================================
+
+REST
+--- About ---
+    REST - REpresentational State Transfer.
+    REST - удобный способ коммуникации между приложениями. Он описывает
+    стандарты взаимодействия Клиента с Сервром по HTTP протоколу.
+    Вызовы REST API могут осуществляться по HTTP.
+    REST API не принуждает использовать какой-то определенный ЯП. Клиент
+    и Сервер могут быть написаны на разных языках.
+    Для передачи информации лучше использовать JSON, но можно и другой формат.
+    
+    JSON Data Binding - привязка JSON к объекту Java.
+    JSON:                           Java object аттрибуты объекта:
+    {
+        "name":"Zaur",              String      строка
+        "salary":750,               int         инт
+        "languages":["EN","FR"],    String[]    массив
+        "car":{                     obj Car     др Java объект
+            "model":"BMW",
+            "color":"red"
+        },
+        "house":null                obj House   пустой Java obj
+    }
+
+    Jackson - преобразует JSON <==> Java obj, добавляется с пом Maven.
+    Преобразование объекта в JSON осущ с пом getters -> читаются поля
+    класса и создаются соответствующие ключи + значения в JSON.
+    Преобразование из JSON в Java obj осущ с пом setters -> читаются
+    ключи:значения JSON и назначаются соотв полям Java объекта.
+    Все преобразования проходят за кулисами Jackson.
+
+--- REST API ---
+    Общепринятые стандарты:
+    method    URL                     CRUD
+    GET     api/employees           Получить всех работников
+    GET     api/rmployees/{empId}   Получить 1 работника 
+    POST    api/employees           Добавить работнника
+    PUT     api/employees           Изменить работника
+    DELETE  api/employees/{empId}   Удалить работника
+
+    api/        - корневой эл, @RequestMapping("api/") для Контроллера
+    employees   - Entity с которым идет работа
+
+    За действия что нужно сделать отвечают не названия URL(они одинаковые),
+    а тип метода HTTP запроса.
+
+--- Configuration without xml ---
+    Конфигурация приложения Sring MVC + Hibernate без исп-я xml:
+    1. Create project with webapp Maven archetype
+    2. Set up database
+    3. Add dependencies to pom.xml
+        spring-webmvc
+        javax.servlet
+        hibernate-core
+        postgresql
+        c3p0
+        spring-orm
+        javax.servlet-api   # для DispatcherServlet
+        jackson-databind    # тот самый Jackson (JSON<=>Java)
+    4. Directories/packages/files
+        ./src/main/java             - create dir, sourse root
+        io.github.ivan100kg.mypack  - create package in java <---+
+        create packages:
+            configuration
+            controller
+            dao
+            entity
+            service
+            exception_handling
+        MyConfig                    - create config class in configuration
+        MyWebInitializer            - create config class in configuration        
+    5. Configure MyConfig.java 
+    6. Configure MyWebInitializer
+    7. Add Tomcat
+
+    // configuration.MyConfig
+    // все аналогично конфигурации с пом xml
+    @Configuration
+    @ComponentScan("io.github.ivan100kg.rest")
+    @EnableWebMvc
+    @EnableTransactionManagement
+    public class MyConfig {
+        @Bean
+        public DataSource dataSource() {
+            ComboPooledDataSource dataSource = new ComboPooledDataSource();
+            try {
+                dataSource.setDriverClass("org.postgresql.Driver");
+                dataSource.setJdbcUrl("jdbc:postgresql://localhost:5432/my_db?useSSL=false&amp;serverTimezone=UTC");
+                dataSource.setUser("bestuser");
+                dataSource.setPassword("bestuser");
+            } catch (PropertyVetoException e) {
+                throw new RuntimeException(e);
+            }
+            return dataSource;
+        }
+
+        @Bean
+        public LocalSessionFactoryBean sessionFactory() {
+            LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
+            sessionFactory.setDataSource(dataSource());
+            sessionFactory.setPackagesToScan("io.github.ivan100kg.rest.entity");
+            Properties hibernateProperties = new Properties();
+            hibernateProperties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL95Dialect");
+            hibernateProperties.setProperty("hibernate.show_sql", "true");
+            sessionFactory.setHibernateProperties(hibernateProperties);
+            return sessionFactory;
+        }
+
+        @Bean
+        public HibernateTransactionManager transactionManager() {
+            HibernateTransactionManager transactionManager = new HibernateTransactionManager();
+            transactionManager.setSessionFactory(sessionFactory().getObject());
+            return transactionManager;
+        }
+    }
+
+    // configuration.MyWebInitializer (это вместо web.xml) + Должен быть
+    установлен плагин maven-war-plugin в pom.xml(вроде как авто)
+    public class MyWebInitializer extends
+            AbstractAnnotationConfigDispatcherServletInitializer {
+        @Override
+        protected Class<?>[] getRootConfigClasses() {
+            return null;
+        }
+
+        @Override
+        protected Class<?>[] getServletConfigClasses() {
+            return new Class[] {MyConfig.class};
+        }
+
+        @Override
+        protected String[] getServletMappings() {
+            return new String[] {"/"};
+        }
+    }
+
+--- Read one/all ---
+    @RestController // это Controller, кот управляет REST запросами и ответами
+    @RequestMapping("/api") // так принято
+    public class MyRESTController {
+        @Autowired
+        private EmployeeService employeeService;    // service
+    }
+
+    dao, service, entity - идентичны что и в Spring MVC + Hibernate,
+    можно скопировать эти пакеты со всеми классами, переписав импорты.
+
+    // GET - api/employees - Получить всех работников
+    @GetMapping("/employees")   // GET url: http://localhost:8080/api/employees
+    public List<Employee> showAllEmployee() {
+        return employeeService.getAllEmployees();   // возвращаяя список, 
+    }                                                  он авто преобр в JSON
+                                                       и в теле responce 
+                                                       отправится клиенту
+    // GET - api/rmployees/{id} - Получить 1 работника(без обраб исключ)
+    @GetMapping("/employees/{id}")  // GET на url "api/employees/{id}"
+    public Employee getEmployee(@PathVariable int id) { // вытащить id из url-
+        return employeeService.getEmployee(id);            парам-ра в запросе
+    }
+
+--- Exceptions Handling ---
+    // Обработка исключений, если пользователь ввел несущ/неправильный id
+       Цель - при неверном запросе вернуть JSON с инфо об ошибке.
+    // Добавим класс в пакет exception_handling.EmployeeWrongId
+    public class EmployeeWrongId {
+        private String info;    // 1 поле
+        ...                     // no args constructor + getters/setters
+    
+    // создадим еще один класс-исключение там же
+    public class NoSuchEmployeeException extends RuntimeException{
+        public NoSuchEmployeeException(String message) { // переопр констр
+            super(message);
+        }
+    }
+    
+    // изменим метод getEmployee в RESTController
+    @GetMapping("/employees/{id}")
+    public Employee getEmployee(@PathVariable int id) {
+        Employee employee = employeeService.getEmployee(id);
+        if (employee == null) {
+            throw new NoSuchEmployeeException(
+                "There is no such Employee with ID: " + id);
+        } 
+        return employee;
+    }
+
+    // добавим в RESTController метод отвечающий за обработку исключений
+    @ExceptionHandler   // будет автоматически ловить исключения в Контроллере
+    public ResponseEntity<EmployeeWrongId> handleException(NoSuchEmployeeException exception) {
+        EmployeeWrongId wrongId = new EmployeeWrongId();
+        wrongId.setInfo(exception.getMessage());
+        return new ResponseEntity<>(wrongId, HttpStatus.NOT_FOUND);
+    }
+    // ResponseEntity<T>    - обертка HTTP - response
+    // <T>                  - тип объекта, кот добавляется в тело ответа
+    // HttpStatus.NOT_FOUND - код статуса ответа
+
+    // добавим еще 1 обработчик исключений, реагирующий на все Exception
+    @ExceptionHandler
+    public ResponseEntity<EmployeeWrongId> handleException(Exception exception) {
+        EmployeeWrongId wrongId = new EmployeeWrongId();
+        wrongId.setInfo(exception.getMessage());
+        return new ResponseEntity<>(wrongId, HttpStatus.BAD_REQUEST);
+    }
+    // Теперь в getMessage() будут попадать все остальные ошибки
+    Этот обработчик не перекрывает более спецефичный верхний обработчик
+
+    Глобальная обработка исключений
+    Чтобы наши обработчики работали над всеми контроллерами, нужно вынести
+    их в отдельный класс - Controller Advice. Реализуется все посредством AOP.
+    Вырезаем методы-обработчики из RESTController и вставляем в нов класс.
+    // exception_handling.EmployeeGlobalExceptionHandler
+    @ControllerAdvice
+    public class EmployeeGlobalExceptionHandler {
+        @ExceptionHandler
+        public ResponseEntity<EmployeeWrongId> handleException(NoSuchEmployeeException exception) {
+            EmployeeWrongId wrongId = new EmployeeWrongId();
+            wrongId.setInfo(exception.getMessage());
+            return new ResponseEntity<>(wrongId, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler
+        public ResponseEntity<EmployeeWrongId> handleException(Exception exception) {
+            EmployeeWrongId wrongId = new EmployeeWrongId();
+            wrongId.setInfo(exception.getMessage());
+            return new ResponseEntity<>(wrongId, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+--- Insert ---
+    Добавить 1 запись в БД.
+    В теле запроса POST приходит Employee(без id) в формате JSON, 
+    метод контроллера должен обработать запрос с пом параметра 
+    @RequestBody Employee employee, автоматически конвертируется 
+    в Employee из JSON.
+    // POST - api/employees - Добавить работнника 
+    @PostMapping("/employees")  // POST запрос на url "api/employees"
+    public Employee addNewEmployee(@RequestBody Employee employee) {
+        employeeService.saveEmployee(employee); // сохраняем в БД
+        return employee;        // вернуть responce c Employee уже с id
+    }
+
+--- Update ---
+    Изменить запись в БД.
+    Используется HTTP request method PUT c JSON объектом Employee(с id) в теле.
+    Ответ(response) будет уже обновленная запись.
+    // PUT - api/employees - Изменить работника
+    @PutMapping("/employees")   // PUT запрос на url "api/employees"
+    public Employee updateEmployee(@RequestBody Employee employee) {
+        // Добавим проверку на существующую запись
+        Employee checkEmployee = employeeService.getEmployee(employee.getId());
+        if (checkEmployee==null) {
+            throw new NoSuchEmployeeException("There is no such Employee with ID: " + employee.getId());
+        }
+        employeeService.saveEmployee(employee); // сохраняем
+        return employee;                        // возвращаем измененную запись
+    }
+    // если id не существует - ошибка
+    // если id = 0 - новая запись
+
+--- Delete ---
+    Удалить запись в БД.
+    Используется HTTP request method DELETE с id в url.
+    Метод обработки будет возвращать текстовую информацию.
+    // DELETE - api/employees/{empId} - Удалить работника
+    @DeleteMapping("/employees/{id}")   // DELETE на url "api/employees/{id}"
+    public String deleteEmployee(@PathVariable int id) {
+        // Добавим проверку на существующую запись
+        Employee employee = employeeService.getEmployee(id);
+        if (employee==null) {
+            throw new NoSuchEmployeeException("There is no such Employee with ID: " + id);
+        }
+        employeeService.deleteEmployee(id); // удаляем
+        return "Employee with id: " + id + " was deleted";
+    }
+
+--- Own REST Client ---
+    1. Create Maven project: maven-archetype-quickstart.
+    2. Configure pom.xml, Add: [junit, spring-webmvc, jackson-databind]
+    3. Create package configuration + MyConfig.java
+    4. Create package entity + Employee.java
+        можно скопировать уже существующий, удалить все аннотации
+    5. Create class io.github.ivan100kg.rest.Communication.java(Project root)
+    6. Create class App.java with in root main.
+    
+    // MyConfig.java
+    @Configuration
+    @ComponentScan("io.github.ivan100kg.rest")
+    public class MyConfig {
+        @Bean   // бин для выполнения запросов
+        public RestTemplate restTemplate() {
+            return new RestTemplate();
+        }
+    }
+
+    // Communication.java
+    @Component
+    public class Communication {
+        @Autowired
+        private RestTemplate restTemplate;  // связать с бином для запросов
+        private final String URL = "http://localhost:8080/api/employees";
+
+        public List<Employee> getAllEmployees() {   // all Employees
+            ResponseEntity<List<Employee>> responseEntity =
+                    restTemplate.exchange(URL, HttpMethod.GET, null,
+                            new ParameterizedTypeReference<List<Employee>>() {});
+            List<Employee> allEmployees = responseEntity.getBody();
+            return allEmployees;    // возвращаем лист работников
+        }
+
+        public Employee getEmployee(int id) {
+            Employee employee = restTemplate.getForObject(URL + "/" + id, Employee.class);
+            return employee;
+        }
+
+        public void saveEmployee(Employee employee) {
+            int id = employee.getId();
+            if (id == 0) {
+                ResponseEntity<String> responseEntity =
+                        restTemplate.postForEntity(URL, employee, String.class);
+                System.out.println("New employee was added to DB");
+                System.out.println(responseEntity.getBody());
+            } else {
+                restTemplate.put(URL, employee);
+                System.out.println("Employee with id = " + id + " was updated");
+            }
+        }
+
+        public void deleteEmployee(int id) {
+            restTemplate.delete(URL + "/" + id);
+            System.out.println("Employee with id = " + id + " was deleted from DB");
+        }
+    }
+
+    // App.java
+    public class App {
+        public static void main(String[] args) {
+            AnnotationConfigApplicationContext context =
+                    new AnnotationConfigApplicationContext(MyConfig.class);
+            Communication communication = context.getBean("communication", Communication.class);
+            List<Employee> allEmployees = communication.getAllEmployees();
+            allEmployees.forEach(System.out::println);  // all
+        }
+    }
+
+
+==============================================================================
+
+Spring Security
+--- About ---
+    Spring Security предоставляет функционал для обеспеч без-ти приложения.
+
+    Аутентификкация - процедура проверки подлинности путем сравнения введенных
+    login:password с хранящимися в БД(или еще где-то) login:password.
+
+    Авторизация - проц проверки разрешений на доступ к тому или иному ресурсу.
+    Роль - дается клиенту для доступа к опред ресурсу.
+
+--- Process ---
+    При запросе на url сначала проходит Аутентификкация, далее
+    при ходит response(HTML-page) в зависимости от ролей - Авторизация.
+                                   role=Employee
+             URL                 +------------> info for all employees 
+    Browser ----> Authentication | role=HR
+                    login:       +------------> info for all employees + Salary
+                    password:    | role=HR+Manager
+                                 +------------> info + Salary + Performance
+    Форма для Аутентификкации дается по умолчанию.
+
+--- Configuration ---
+    Add dependencies to pom.xml:
+        spring-webmvc
+        javax.servlet-api
+        spring-security-web         // включает spring-security-core
+        spring-security-config
+        spring-security-taglibs     // для jsp
+        postgresql                  // JDBC Driver
+        c3p0                        // connection pool
+    Add files to configuration package: 
+        MyConfig.java
+        MyWebInitializer.java
+        MySecurityInitializer.java
+        MySecurityConfig.java
+    Add Tomcat
+
+    // MyWebInitializer
+    public class MyWebInitializer extends
+        AbstractAnnotationConfigDispatcherServletInitializer {
+        @Override
+        protected Class<?>[] getRootConfigClasses() {
+            return null;
+        }
+        @Override
+        protected Class<?>[] getServletConfigClasses() {
+            return new Class[]{MyConfig.class};
+        }
+        @Override
+        protected String[] getServletMappings() {
+            return new String[]{"/"};
+        }
+    }
+
+    // MyConfig
+    @Configuration
+    @ComponentScan("io.github.ivan100kg.security")
+    @EnableWebMvc
+    public class MyConfig {
+        @Bean   // jsp суффикс/префикс
+        public ViewResolver viewResolver(){
+            InternalResourceViewResolver internalResourceViewResolver =
+                    new InternalResourceViewResolver();
+            internalResourceViewResolver.setPrefix("/WEB-INF/views/");
+            internalResourceViewResolver.setSuffix(".jsp");
+            return internalResourceViewResolver;
+        }
+    }
+
+    // MySecurityInitializer.java
+    public class MySecurityInitializer extends
+        AbstractSecurityWebApplicationInitializer {}
+
+    // MySecurityConfig.java
+    @EnableWebSecurity  // класс ответственный за security config(@Configuration)
+    public class MySecurityConfig extends WebSecurityConfigurerAdapter {
+        @Override
+        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+            User.UserBuilder userBuilder = User.withDefaultPasswordEncoder();
+            auth.inMemoryAuthentication()
+                    .withUser(userBuilder.username("zaur").password("zaur").roles("EMPLOYEE"))
+                    .withUser(userBuilder.username("ivan").password("ivan").roles("MANAGER", "HR"))
+                    .withUser(userBuilder.username("oleg").password("oleg").roles("HR"));
+        }
+    }
+
+--- Authentication ---
+    // Создадим контроллер и 3 странички 
+    // Теперь при входе на сайт - вылезет форма логина-пароля
+
+    // controller.MyController
+    @Controller
+    public class MyController {
+        @GetMapping("/")
+        public String getInfoForAllEmps() {
+            return "all-employees";
+        }
+        @GetMapping("/hr-info")
+        public String getInfoOnlyForHR() {
+            return "view-for-hr";
+        }
+        @GetMapping("/manager-info")
+        public String getInfoOnlyForManager() {
+            return "view-for-manager";
+        }
+    }
+
+    // all-employees.jsp - текст + 2 кнопки на др странички
+    <h3>Information for all employees</h3>
+    <input type="button" value="Salary" onclick="window.location.href='hr-info'">
+    Only for HR stuff <br>
+    <input type="button" value="Performance" onclick="window.location.href='manager-info'">
+    Only for Managers
+
+    // и две простенькие странички 
+    <p>Salary</p>       // view-for-hr.jsp
+    <p>Performance</p>  // view-for-manager.jsp
+
+--- Authorization ---
+    Добавим перезаписанный метод в MySecurityConfig. Распределение прав доступа
+    к различным url.
+    // MySecurityConfig.java
+    ...
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests()    // url и права доступа у ролей
+                .antMatchers("/").hasAnyRole("EMPLOYEE", "HR", "MANAGER")
+                .antMatchers("/hr-info").hasRole("HR")
+                .antMatchers("/manager-info/**").hasRole("MANAGER")
+                .and().formLogin().permitAll(); // логин-пасс запраш у всех
+                // ** - значит люб адрес нач-ся с manager-info/
+    }
+
+    // Добавим в all-employees.jsp видимость кнопок для различных ролей
+    <security:authorize access="hasRole('HR')">
+        <input type="button" value="Salary" onclick="window.location.href='hr-info'">
+        Only for HR stuff
+    </security:authorize>
+    <br>
+    <security:authorize access="hasRole('MANAGER')">
+        <input type="button" value="Performance" onclick="window.location.href='manager-info'">
+        Only for Managers
+    </security:authorize>
+
+--- Use Database ---
+    Хранение логин-паролей в БД.
+    
+    1. Set up database - tables: 
+        users:[username(15), password(15), enabled] // послед boolean <-----+
+        authorities:[username(15), authority(25)]   // роли, username FK на +
+        -- table users
+        zaur,{noop}zaur,1       // {noop} - без шифрования
+        elena,{bcrypt}$2a$1..,1 // {bcrypt} - шифрование(генерим на сайте)
+        ivan,{noop}ivan,0       // 0 - user disabled(не войдет)
+
+        -- table authorities
+        zaur,ROLE_EMPLOYEE
+        elena,ROLE_HR
+        ivan,ROLE_HR
+        ivan,ROLE_MANAGER
+    2. Add bean to MyConfig.java
+        @Bean
+        public DataSource dataSource() {
+            ComboPooledDataSource dataSource = new ComboPooledDataSource();
+            try {
+                dataSource.setDriverClass("org.postgresql.Driver");
+                dataSource.setJdbcUrl("jdbc:postgresql://localhost:5432/my_db?useSSL=false&amp;serverTimezone=UTC");
+                dataSource.setUser("bestuser");
+                dataSource.setPassword("bestuser");
+            } catch (PropertyVetoException e) {
+                throw new RuntimeException(e);
+            }
+            return dataSource;
+        }
+    3. Add to MySecurityConfig.java and update configure method(first)
+        @Autowired
+        DataSource dataSource;
+
+        @Override
+        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+            auth.jdbcAuthentication().dataSource(dataSource);
+        }
+        ...
+
+
+===================================================================
+
+Spring Boot
+--- About ---
+    Spring Boot - это фреймворк, цель которого - упростить создание
+    приложений на Spring. Работает поверх Spring.
+
+    Фишки:
+        -автоматическая конфигурация приложения
+        -управление зависимостями в Maven проектах
+        -встроенная поддержка сервера
+
+    В Spring Boot используются спец зависимости Maven - Starter пакет - 
+    это набор взаимосвяз зависимостей, кот могут быть добавлены в прилож.
+    Версии пакетов в Starter совместимы между собой, не паримся.
+    например для AOP:
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-aop</artifactId>
+
+    Так как Tomcat сервер встроенный - моможно не устанавливать в war 
+    формат, а в jar, и запускать приложение можно прямо с класса/jar
+
+    Дефолтной реализацией JPA в SpringBoot является Hibernate.
+    Роль Hibernate сессии в JPA выполняет EntityManager - управление связью 
+    Entity класса с таблицей в БД к которой привязан класс.
+
+--- Project Structure ---
+    New project in Idea:
+                    settings:            dependencies:
+    New Project -> Spring Initializr -> Web:Spring Web, 
+                                        SQL:Data JPA
+                                        SQL:PostgreSQL Driver
+
+    New Project with site https://start.spring.io/:
+    Добавляем информацию о проекте + добавляем зависимости
+    Далее нажимаем Geneate - скаченный zip разарх в люб место - проект готов.
+    Далее просто создаем в Idea new project from existing sources.
+
+    Можно добавить в dependency - Spring Boot DevTools - авто рестарт проекта
+    когда делаем какие-либо изменения.
+
+    Structure:
+    ├── HELP.md
+    ├── mvnw        # обертки Maven project 
+    ├── mvnw.cmd    # если не установлен Maven - тут он запустится
+    ├── pom.xml     # наши зависимости и остальные настройки Maven
+    ├── spring_course_springboot.iml
+    └── src
+        ├── main
+        │   ├── java
+        │   │   └── io
+        │   │       └── github
+        │   │           └── ivan100kg
+        │   │               └── springboot
+        │   │                   └── spring_course_springboot
+        │   │                       └── SpringCourseSpringbootApplication.java
+        │   └── resources
+        │       ├── application.properties  # @PropertySource(..)->(@Value("{}"))
+        │       ├── static
+        │       └── templates
+        └── test                # тестирование
+            └── java
+                └── io
+                    └── github
+                        └── ivan100kg
+                            └── springboot
+                                └── spring_course_springboot
+                                    └── SpringCourseSpringbootApplicationTests.java
+
+    // SpringCourseSpringbootApplication.java
+    @SpringBootApplication  // @Configuration+@EnableAutoConfiguration+@ComponentScan
+    public class SpringCourseSpringbootApplication {
+        public static void main(String[] args) {    // запуск прилож
+            SpringApplication.run(SpringCourseSpringbootApplication.class, args);
+        }
+    }
+    При запуске main происходин создание Spring Container, поиск бинов и 
+    запуск Tomcat где и будет работать это приложение.
+    Сканируется пакет в котором расположен данный файл + все подпакеты
+    (можно убрать этот файл в др место и указать пакеты для скана вручную).
+
+--- REST API ---
+    Configuration:
+    1. Set up database(в зависимости от надобности)
+    2. Add dependencies(уже добавлены при создании)
+        Spring Boot DevTools(удалить версию) - авто рестарт проекта в Idea
+        еще нужно вкл settings -> compiler -> auto build
+        перезапускать на молоточек в Idea
+    3. Add properties for connection to DB.
+        // application.properties
+        сщв
+    4. Add entity package+class(Employee)
+        @Entity // все как обычно + toString() можно
+        @Table(name = "employees")
+        public class Employee {
+            @Id
+            @GeneratedValue(strategy = GenerationType.IDENTITY)
+            @Column(name = "id")
+            private int id;
+            ...            
+            public Employee() {
+            }
+
+            public Employee(String name, String surname, String department, int salary) {
+                this.name = name;
+                this.surname = surname;
+                this.department = department;
+                this.salary = salary;
+            }
+
+            public int getId() {
+                return id;
+            }
+
+            public void setId(int id) {
+                this.id = id;
+            }
+            ...
+        }
+    5. Add DAO
+        // Интерфейс такой же, реализацию подправим
+        // Заменим получение сессии с пом Hibernate на JPA(javax.persistence)
+        // Для того чтобы в будущем легко поменять реализацию JPA.
+        @Repository
+        public class EmployeeDAOImpl implements EmployeeDAO {
+            @Autowired
+            private EntityManager entityManager;    // объект для работы с БД
+                                                       типа SessionFactory
+            @Override   // SELECT *
+            public List<Employee> getAllEmployees() {
+                List<Employee> allEmployees = entityManager
+                        .createQuery("FROM Employee").getResultList();
+                return allEmployees;
+            }
+
+            @Override   // INSERT
+            public void saveEmployee(Employee employee) {
+                // entityManager.merge(employee);  // просто добавить
+                // если нужно вернуть новую инфу об id
+                Employee newEmployee = entityManager.merge(employee);
+                employee.setId(newEmployee.getId());
+            }
+
+            @Override   // SELECT * ... WHERE id=?
+            public Employee getEmployee(int id) {
+                return entityManager.find(Employee.class, id);
+            }
+
+            @Override   // DELETE ... WHERE id=?
+            public void deleteEmployee(int id) {
+                entityManager.createQuery("delete from Employee where id=:employeeId")
+                        .setParameter("employeeId", id)
+                        .executeUpdate();
+            }
+        }
+    6. Add Service
+        // все такое же ничего не меняем
+    7. Add Controller
+        // все тоже самое
+        @RestController
+        @RequestMapping("/api")
+        public class MyRESTController {
+            @Autowired
+            private EmployeeService employeeService;
+
+            @GetMapping("/employees")
+            public List<Employee> showAllEmployee() {
+                return employeeService.getAllEmployees();
+            }
+
+            @GetMapping("/employees/{id}")
+            public Employee getEmployee(@PathVariable int id) {
+                Employee employee = employeeService.getEmployee(id);
+                return employee;
+            }
+
+            @PostMapping("/employees")
+            public Employee addNewEmployee(@RequestBody Employee employee) {
+                employeeService.saveEmployee(employee);
+                return employee;
+            }
+
+            @PutMapping("/employees")
+            public Employee updateEmployee(@RequestBody Employee employee) {
+                employeeService.saveEmployee(employee);
+                return employee;
+            }
+
+            @DeleteMapping("/employees/{id}")
+            public String deleteEmployee(@PathVariable int id) {
+                Employee employee = employeeService.getEmployee(id);
+                employeeService.deleteEmployee(id);
+                return "Employee with id: " + id + " was deleted";
+            }
+        }
+
+--- Spring Data JPA ---
+    Spring Data JPA - удобный механизм для вз-ия с таблицами БД, минимум кода.
+    1. Изменим интерфейс EmployeeDAO:
+        // JpaRepository<T, ID> -> T - Employee, ID - тип id - Integer(wrapper)
+        // т.е. указываем Entity и тип ID(если примитив -> wrapper class)
+        @Repository // можно не писать уже включен
+        public interface EmployeeRepository 
+                extends JpaRepository<Employee, Integer> {} // можно не override
+        Встроенные методы JpaRepository для работы с БД:
+        Method      | CRUD operation
+        ------------+---------------
+        findAll     | SELECT all rows
+        findById    | SELECT one row
+        save        | UPDATE row
+        deleteById  | DELETE row
+    2. Удаляем EmployeeDAOImpl, всю логику/имплементацию берет на себя Boot.
+    3. EmployeeService оставим без измен, изменим EmployeeServiceImpl:
+        @Service
+        public class EmployeeServiceImpl implements EmployeeService{
+            @Autowired  // Изменим название зависимости
+            private EmployeeRepository employeeRepository;
+
+            @Override   // получить все записи
+            public List<Employee> getAllEmployees() {
+                return employeeRepository.findAll();
+            }
+
+            @Override   // сохранить запись
+            public void saveEmployee(Employee employee) {
+                employeeRepository.save(employee);
+            }
+
+            @Override   // получить 1 запись - Optional
+            public Employee getEmployee(int id) {
+                return employeeRepository.findById(id).orElse(null);
+            }
+
+            @Override   // удалить запись
+            public void deleteEmployee(int id) {
+                employeeRepository.deleteById(id);
+            }
+        }
+    4. Контроллер и Entity без изменений
+
+    Добавление новых методов в Репозиторий:
+    В EmployeeRepository можно добавить множество разных методов для
+    манипулирования с данными в БД, Idea подсказывает как нужно называть
+    эти методы - тогда даже реализовывать не нужно, все будет работать
+    под капотом Spring Boot, например:
+    1. Добавить необходимый метод в Репозиторий
+        // EmployeeRepository
+            ...
+            public List<Employee> findAllByName(String name);   // можно не реализ
+        Далее добавляем в Service метод для работы с этим методом:
+    2. Добавить метод в Service
+        // EmployeeService
+            ...
+            public List<Employee> findAllByName(String name);   // можно назвать также
+        // EmployeeServiceImpl
+        @Override    // имплементим
+            public List<Employee> findAllByName(String name) {
+                return employeeRepository.findAllByName(name);
+            }
+    3. Добавить метод в Controller:
+        @GetMapping("/employees/name/{name}")   // так принято /name/{name}
+        public List<Employee> getAllEmployeesByName(@PathVariable String name) {
+            return employeeService.findAllByName(name);
+        }
+
+    Свои методы в репозитории:
+    @Query annotation in Spring Data JPA to execute both JPQL and native SQL queries
+    // JPQL
+    @Query("SELECT u FROM User u WHERE u.status = 1")
+    Collection<User> findAllActiveUsers();
+    // Native SQL
+    @Query(
+    value = "SELECT * FROM users u WHERE u.status = 1", 
+    nativeQuery = true)
+    Collection<User> findAllActiveUsersNative();
+    // Named params
+    @Query("SELECT u FROM User u WHERE u.status = :status and u.name = :name")
+    User findUserByStatusAndNameNamedParams(
+        @Param("status") Integer status, 
+        @Param("name") String name);
+    // IN Collection
+    @Query(value = "SELECT u FROM User u WHERE u.name IN :names")
+    List<User> findUserByNameList(@Param("names") Collection<String> names);
+    
+--- Spring Data REST ---
+    Spring Data REST - механизм создания REST API на основе типа Entity,
+    прописанного в репозитории проекта. Можно обойтись в проекте без 
+    контроллера и сервисов.
+    1. Добавим зависимость в pom.xml
+        spring-boot-starter-data-rest # версию удаляем(она пропис в <parent>)
+    2. Удаляем контроллер и сервисы.
+
+    Как происходит связь Entity с URL mapping:
+    Допустим наш Entity класс называется Employee, следовательно Репозиторий
+    будет таким:
+    public interface EmployeeRepository
+        extends JpaRepository<Employee, Integer> {}
+    Employee --> employees, заглав буква становится малой + множ число.
+    Маппинг будет следующий:
+        method  | URL                | CRUD
+        --------+--------------------+------------------------
+        GET     |/employees          |Получить всех работников
+        GET     |/rmployees/{id}     |Получить 1 работника 
+        POST    |/employees          |Добавить работнника
+        PUT     |/employees/{id}     |Изменить работника! тут так
+        DELETE  |/employees/{id}     |Удалить работника
+    
+    При открытии этих страниц - будет видна доп информация, ссылки
+    на отдельных работников, пагинация.
+
+--- Spring Boot Actuator ---
+    Spring Boot Actuator - предоставляет готовые enpoints(конечные точки(url)),
+    с помощью которых мониторится приложение.
+    1. Добавим зависимости :
+        spring-boot-starter-actuator    # без версии
+        spring-boot-starter-security    # без версии, для входа
+        Пароль для входа будет показан при старте Boot в консоли
+        Логин: user
+        Либо прописываем в properties:
+            spring.security.user.name=user
+            spring.security.user.password=123
+    3. Добавить в properties
+        management.endpoints.web.exposure.include=*     # вкл все endpoints
+        info.name=Spring Data REST                      # инфа для /info
+        info.description=Test my Spring Data REST application
+    3. Endpoints
+        URL                 | Description
+        --------------------+--------------------------------------------
+        /actuator/health    | инфо о статусе приложения
+        /actuator/info      | инфо о приложении
+        /actuator/beans     | инфо о всех бинах, зарег в Spring Container
+        /actuator/mappings  | инфо о всех Mappings
+
+--- REST consumer/client ---
+    Посылать запросы и принимать ответы можно с пом RestTemplate.
+    Допустим наш REST сервер отвечает JSON вида {"id":1, "content":"string"}
+    Create:
+    1. создаем domain(model) class на основе JSON объекта кот получаем из
+       возвращаемого API, названия и тип полей класса должен соответствовать
+       ключам JSON, если имя другое можно воспользоваться аннот @JsonProperty
+       чтобы указать точный ключ(в нашем случ не требуется)
+        @JsonIgnoreProperties(ignoreUnknown = true) // любые другие поля,
+        public class Greeting {                        которые будут получ
+            private long id;                           которых нет тут
+            private String content;                    будут игнорироваться
+
+            public Greeting() {
+            }
+
+            ...
+            // getters/setters + toString()
+        }
+    2. Отредактируем главный файл запуска RestClientApplication.java, добавим
+       в него логгер, RestTemplate для обработки входящ данных и средство,
+       которое запускает этот RestTemplate и извлекает данные с API - средство
+       наз-ся CommandLineRunner.
+        @SpringBootApplication
+        public class RestClientApplication {
+            // logger
+        private static final Logger log =
+                    LoggerFactory.getLogger(RestClientApplication.class);
+
+            public static void main(String[] args) {
+                SpringApplication.run(RestClientApplication.class, args);
+            }
+
+            // RestTemplate
+            @Bean
+            public RestTemplate restTemplate(RestTemplateBuilder builder) {
+                return builder.build();
+            }
+
+            // CommandLineRunner
+            @Bean
+            public CommandLineRunner run(RestTemplate restTemplate) throws Exception {
+                return args -> {
+                    Greeting greeting = restTemplate.getForObject(
+                            "http://localhost:8082/greeting", Greeting.class);
+                };
+            }
+        }
+    3. Тестирум проект 
+        ./mvnw spring-boot:run
+        ./mvnw clean package
+        java -jar target/myjar-0.1.0.jar
+       
+--- Data prealoading ---
+    После загрузки в ApplicationContext, Spring запуск бины CommandLineRunner,
+    в нашем случае с пом repository будут сохранены 2 entity в БД.
+    @Configuration
+    public class LoadCelebDatabase {
+        private static final Logger log = LoggerFactory.getLogger(LoadCelebDatabase.class);
+        @Bean
+        CommandLineRunner initDatabase(CelebRepository repository) {
+            return args -> {
+
+                Celeb iM = new Celeb(
+                        "Irina_Majorova",
+                        36.0,
+                        "Russia",
+                        LocalDate.of(1980, Month.APRIL, 12)
+                );
+                log.info("Preloading " + iM);
+                Celeb iN = new Celeb(
+                        "Irina_Neretina",
+                        37.0,
+                        "Russia",
+                        LocalDate.of(1988, Month.JULY, 3)
+                );
+                log.info("Preloading " + iN);
+
+                repository.saveAll(List.of(iM, iN));
+            };
+        }
+    }
+
+--- DTO/Data Transfer Object ---
+    Один из шаблонов проектирования, используется для передачи данных 
+    между подсистемами приложения.
+    DTO объекты используются для сериализации данных и передачей их между 
+    системами, и соответственно для десериализации обратно в объект, 
+    то есть являются объектами передачи данных. DTO объекты не содержат 
+    поведения и не содержат методов бизнес логики.
+    DTO могут содержать такие же поля как Entity или больше/меньше.
+    По сути DTO это POJO class(поля+свойства)
+
+    // Entity
+    @Entity
+    public class CelebEntity {
+        @Id
+        @Column
+        @GeneratedValue()
+        private Long id;
+        @Column
+        private String name;
+        ... + noArgsConstr,setters,getters
+    
+    // DTO
+    public class CelebDTO {
+    private Long id;
+    private String name;
+    private int someVar;    // какое-то доп поле к примеру
+    ... + getters,setters
+
+    // Utils
+    @Service
+    public class MappingUtils {
+        public CelebDTO mapToCelebDTO(Celeb entity) {
+            CelebDTO dto = new CelebDTO();
+            dto.setId(entity.getId());
+            dto.setName(entity.getName());
+            dto.someVar = entity.getName().length()
+            return dto;
+        }
+
+        public Celeb mapToCelebEntity(CelebDTO dto) {
+            Celeb entity = new Celeb();
+            entity.setName(dto.getName());
+            entity.setSize(dto.getSize());
+            return entity;
+        }
+    }
+
+    // Service
+    @Service
+    public class CelebServiceImpl implements CelebService{
+        private final CelebRepository celebRepository;
+        private final MappingUtils mappingUtils;
+
+        @Autowired
+        public CelebServiceImpl(CelebRepository celebRepository, MappingUtils mappingUtils) {
+            this.celebRepository = celebRepository;
+            this.mappingUtils = mappingUtils;
+        }
+
+        @Override
+        @Transactional
+        public List<CelebDTO> getAllCelebs() {
+            return celebRepository.findAll().stream()
+                    .map(mappingUtils::mapToCelebDTO)
+                    .toList();
+        }
+
+        @Override
+        @Transactional
+        public CelebDTO getCelebById(Long id) {
+            return mappingUtils.mapToCelebDTO(celebRepository.findById(id)
+                    .orElse(new Celeb()));
+
+    // Controller
+    @RestController
+    @RequestMapping("api/v1/celebs")
+    public class CelebController {
+        @Autowired
+        private CelebService celebService;
+
+        @GetMapping
+        public List<CelebDTO> all() {
+            return celebService.getAllCelebs();
+        }
+
+        @GetMapping("/{id}")
+        public CelebDTO one(@PathVariable Long id) {
+            return celebService.getCelebById(id);
+        }
+
+Setting examples
+--- Spring Boot + JPA + Postgress
+    # structure
+    ├── src
+    │   ├── main
+    │   │   ├── java
+    │   │   │   └── io
+    │   │   │       └── github
+    │   │   │           └── ivan100kg
+    │   │   │               └── springsecuretoken
+    │   │   │                   ├── SpringSecureTokenApplication.java
+    │   │   │                   └── student
+    │   │   │                       ├── Student.java
+    │   │   │                       ├── StudentConfig.java
+    │   │   │                       ├── StudentController.java
+    │   │   │                       ├── StudentRepository.java
+    │   │   │                       └── StudentService.java
+
+    # application.properties
+    spring.datasource.url=jdbc:postgresql://localhost:5432/my_db
+    spring.datasource.username=
+    spring.datasource.password=
+    spring.jpa.hibernate.ddl-auto=create-drop - авто создание/удаление таблицы
+    spring.jpa.show-sql=true
+    spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+    spring.jpa.properties.hibernate.format_sql=true
+    server.error.include-message=always - показывать msg ошибки сервера
+
+
+    # Entity, благодаря конфигу выше таблица 'student' на основе этого Entity
+    будет каждый раз создаваться/дропаться при запуске приложения
+    @Entity
+    @Table
+    public class Student {
+        @Id
+        @SequenceGenerator(name = "student_sequence",
+                sequenceName = "student_sequence",
+                allocationSize = 1)
+        @GeneratedValue(strategy = GenerationType.SEQUENCE,
+                generator = "student_sequence")
+        private Long id;
+        private String name;
+        private String email;
+        private LocalDate dob;
+        @Transient              // не добавляется в базу а генерится в классе
+        private Integer age;    // не вкл в конструкторы генерим знач в get
+
+        public Student() {
+        }
+
+        public Integer getAge() {
+            return  Period.between(getDob(), LocalDate.now()).getYears();
+        }
+        ...
+
+    # после создания таблицы можно еще добавлять данные для проверки
+    @Configuration
+    public class StudentConfig {
+        @Bean
+        CommandLineRunner commandLineRunner(StudentRepository repository) {
+            return args -> {
+                Student ivan = new Student(
+                        "Ivan",
+                        "ivan100kg@gmail.com",
+                        LocalDate.of(1983, Month.JANUARY, 23),
+                        39
+                );
+                Student inna = new Student(
+                        "Inna",
+                        "inna29@gmail.com",
+                        LocalDate.of(1998, Month.MARCH, 3),
+                        24
+                );           
+                repository.saveAll(List.of(ivan, inna));
+            };
+        }
+    }
+
+
+--- Spring Boot + Freemarker templates ---
+    Вся настройка и шаблоны можно кидать в resources/templates,
+    все суффиксы добавляются авто.
+    # Add to pom.xml:
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-freemarker</artifactId>
+    </dependency>
+
+    # Add to application.properties:
+    spring.freemarker.template-loader-path=classpath:/templates
+    spring.freemarker.suffix=.ftl
+
+    # возврат шаблона из контроллера
+    @GetMapping(value = "/celebs")
+    public String getAllCelebs() {
+        return "index";     // возвращает шаблон index.ftl
+    }
+
+
+--- Application running ---
+    If you use Maven, you can run the application by using:
+        ./mvnw spring-boot:run 
+    Alternatively, you can build the JAR file with:
+        ./mvnw clean package
+    And then run the JAR file, as follows:
+        java -jar target/gs-rest-service-0.1.0.jar
+
+
+--- Rest Template ---
+    HTTP client более высокого уровня
+    
+    методы
+    -----------------------------------------------------------------------------------------------------
+    getForObject        Получает представление через метод GET.
+    getForEntity        Получает ResponseEntity (то есть статус, заголовки и тело) через GET.
+    headForHeaders      Получает все заголовки для ресурса через метод HEAD.
+    postForLocation     Создает новый ресурс через метод POST и возвращает заголовок Location из ответа.
+    postForObject       Создает новый ресурс через метод POST и возвращает представление из ответа.
+    postForEntity       Создает новый ресурс через метод POST и возвращает представление из ответа.
+    put                 Создает или обновляет ресурс через метод PUT.
+    delete              Удаляет ресурсы по указанному URI-идентификатору через метод DELETE.
+    optionsForAllow     Получает допустимые HTTP-методы для ресурса через метод ALLOW.
+    exchange            Более обобщенная (и менее консервативная) версия предыдущих методов, 
+                        которая обеспечивает дополнительную гибкость, если это необходимо. 
+                        Он принимает RequestEntity (включая HTTP-метод, URL-адрес, заголовки и тело в 
+                        качестве вводных данных) и возвращает ResponseEntity. Эти методы позволяют 
+                        использовать ParameterizedTypeReference вместо Class для задания типа ответа 
+                        с помощью дженериков.
+    execute             Наиболее обобщенный способ выполнения запроса, с полным контролем над подготовкой
+                        запроса и извлечением ответа через интерфейсы обратного вызова.
+
+    Объект:
+    RestTemplate restTemplate = new RestTemplate();         // HttpURLConnection по умолч, можно сменить 
+    
+    Заголовки:
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", "token");
+    headers.set("Content-Type", "application/json");
+
+    Параметры в адресной строке:    
+    UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("https://example.com"); // builder
+    builder.queryParam("name", "Egor");                     // устанавливаем параметры
+    builder.queryParam("age", 13);                          // ..
+    String url = builder.toUriString();                     // получаем url с параметрами
+    HttpEntity<Void> entity = new HttpEntity<>(headers);    // request entity с нашими заголовками
+    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class); // запрос
+    response.getStatusCode();                               // обрабытываем статус
+    
+    Получение ответа в виде JSON из ResponseEntity:
+    ObjectMapper mapper = new ObjectMapper();
+    PassportResponse result = null;
+    try {
+        result = mapper.readValue(response.getBody(), PassportResponse.class);
+    } catch (JsonProcessingException e) {
+        log.error(e.getMessage());
+    }
+
+
+--- WSDL SOAP клиент ---
+    Сервис с которым необходимо работать по SOAP имеет адрес:
+        http://b2b-demo.n3health.ru/emk/PixService.svc
+    
+    Схема wsdl может быть представлена файлом или ссылкой:
+        http://b2b-demo.n3health.ru/emk/PixService.svc?wsdl
+        ./scheme.wsdl
+    
+    1. подключаем зависимости:
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
+            <version>4.0.2</version>
+        </dependency>
+
+    2. генерируем классы по схеме:
+        можно использовать любой из этих инструментов
+        wsimport    - из коробки(Java 8)
+        wsdl2java   - докачать отдельно
+        
+        Примеры:
+        wsimport -keep                                                      # сохраняет оригинальные файлы .class
+                 -s ./src/main/java                                         # каталог для сгенерированных Java-файлов
+                 -p ru.sciencelab.nsi_dictionary.model                      # пакет, в который будут помещены сгенерированные классы
+                 https://nsi.rosminzdrav.ru/wsdl/SOAP-server.v2.php?wsdl    # ссылка на схему
+        
+        wsdl2java -d ~/Projects/test -p sciencelab.wsdlpac http://b2b-demo.n3health.ru/emk/PixService.svc?wsdl
+
+    3. возможные проблемы с ssl сертификатами
+        качаем сертификат с браузера с нужного сайта URL
+        сохраним файл как file.crt 
+        Google Chrome: справа от адреса нажать на кнопку -> detail -> export
+
+        Добавим файл сертификата в хранилище, для нужной версии Java(в примере 17)
+        sudo keytool -import -alias mycert -file ~/file.crt -keystore /usr/lib/jvm/java-17-openjdk-amd64/lib/security/cacerts
+    
+    4. Создаем конфиг файл в проекте
+        @Configuration
+        public class CxfConfig {
+            @Bean
+            public PixService pixService() throws MalformedURLException {   // создаем бин pixService
+                return new PixService(new URL("адрес сервиса"));            // PixService - это сгенеренный класс
+            }                                                               // для вз-ия с сервисом
+        ...
+        }
+
+    5. Создаем свои сервисы для работы с сервером
+        private final IEmkService emkService;                               // IEmkService - сгенеренный интерфейс
+
+        @Autowired
+        public EgiszServiceImpl(PixService pixService) {                    // берем наш бин созданный выше
+            this.pixService = pixService.getSoap12PixService();             // выдергиваем из него сервис по soap
+        }                                                                   // и уже работаем с ним по api
+
+    6. Смотрим api, наполняем сущности, взаимодействуем с сервисом
+
+
+--- Schedule ---
+Планировщик задач, запуск методов по расписанию
+@EnableScheduling   // ставим над main или над любым классом-конфигом
+
+// отключить планирование во время выполнения тестов
+@ConditionalOnProperty(name = "scheduler.enabled", matchIfMissing = true)
+
+Настройки аннотации @Scheduled, все время указывается в миллисекундах:
+fixedRate       — задает фиксированное время в миллисекундах между последовательными запусками метода.
+fixedDelay      — задает задержку в миллисекундах после завершения выполнения метода до следующего его запуска.
+initialDelay    — определяет начальную задержку перед первым запуском метода.
+cron            — позволяет использовать выражение cron для установки расписания выполнения метода более гибко.
+
+Следующий вызов метода будет ждать завершения предыдущего, даже если вышло время fixedRate
+
+// example
+@Component
+public class ScheduledTasks {
+
+    @Scheduled(fixedRate = 5000)        // Запускать каждые 5 секунд
+    public void doSomething() {}
+
+    @Scheduled(cron = "0 * * * * *")    // Запускать каждую минуту в начале минуты
+    public void doSomethingElse() {}
+
+    @Scheduled(cron = "@hourly")        // Запускать ежечасно он же 0 0 * * * *
+    public void doAgain() {}
+}
+
+// запуск задач в параллельном потоке, если время вышло, но текущий поток не отработал
+@EnableAsync    - ставим над конфиг классом с @EnableScheduling
+@Async          - ставим над методом с @Schedule

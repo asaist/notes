@@ -1,0 +1,53 @@
+Функциональные интерфейсы в Java 8 → Consumer, Supplier, Predicate и Function.
+
+- Consumer (потребитель)
+Это функциональный интерфейс, который принимает один параметр на вход и не возвращает никаких выходных данных
+
+void accept(T t);
+default Consumer<T> andThen(Consumer<? super T> after);
+
+public void whenNamepresentsConsumeAll(){
+	Consumer<String> printConsumer = t-> system.out.println(t);
+	Stream<String> cities = Stream.of("New York", "Amsterdam", "London", "Samara");
+	cities.forEach(printConsumer)
+}
+
+- Supplier (поставщик)
+Supplier - это простой интерфейс, указывающий, что данная реализация является поставщиком какого то результата. 
+У поставщика есть только один метод get() и нет никаких других методов по умолчанию
+или статических методов
+public void supplier(){
+	Supplier<Double> doubleSupplier = 	
+}
+
+- Predicate (предикат)
+интерфейс Predicate представляет собой логическую функцию аргумента.
+Используется для фильтрации данных из потока.
+
+List<String> names = List.of("Sam", "John", "Sindy", "Katerine");
+Predicate<String> predicate = name -> name.startsWith("S");
+names.stream().filter(predicate).forEach(System.out::println);
+
+* Predicate также предоставляет несколько стандартных и статических методов для композиции и других целей:
+
+default Predicate<T> and(Predicate<? super T> other);
+default Predicate<T> or(Predicate<? super T> other);
+static <T> Predicate<T> isEquals(Object targetRef);
+default Predicate<T> negate();
+
+public void testPredicateAndComposition() {
+    List<String> names = Arrays.asList("Smith", "Samueal", "Catley", "Sie");
+    Predicate<String> startPredicate = str -> str.startsWith("S");
+    Predicate<String> lengthPredicate = str -> str.length() >= 5;
+    names.stream()
+      .filter(startPredicate.and(lengthPredicate))
+      .forEach(System.out::println);
+}
+
+- Function (функция)
+Это более общий интерфейс, который принимает один аргумент и выдает  результат
+List<String> names = Arrays.asList("Smith", "Gourav", "John", "Catania");
+    Function<String, Integer> nameMappingFunction = String::length;
+    List<Integer> nameLength = names.stream()
+      .map(nameMappingFunction).collect(Collectors.toList());
+    System.out.println(nameLength);

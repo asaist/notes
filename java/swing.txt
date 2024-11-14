@@ -1,0 +1,63 @@
+Компонент - визуальный элемент(кнопка, ползунок...)
+Контейнер - спец компонент, который может вмещать другие компоненты
+Для отображения компонентов их необходимо поместить в контейнер
+
+Контейнеры верхнего уровня: JFrame, JApplet, JWindow и JDialog. Наследуются
+от Component и Container из библиотеки АWT. Должны находиться на верхнем
+уровне иерархии.
+
+Контейнеры не верхнего уровня(легковесные) наследуются от JComponent, 
+пример JPanel - контейнер общего назначения, могут быть вложенными.
+
+Компоненты наследуются от JComponent, их названия начинаются с 'J'
+
+Панели - Каждый контейнер верхнего уровня определяет ряд панелей.
+JRootPanel - корневая панель всех панелей. Это легковесный контейнер предназнач для 
+управления др панелями.
+Панели, составляющие корневую панель, называются прозрачной панелью, панелью содержимого
+и многослойной панелью соответственно.
+JPanel - прозрачная панель верхнего уровня, находится над всеми панелями и покрывает их,
+позволяет управлять событиями мыши, оказ влияние на весь контейнер в целом.
+JLayeredPane - многослойная панель, позволяет задать определенную глубину размещ комп-в,
+глубина определяет степень перекрытия компонентов(по координате Z). На многослойной панели
+находится панель содержимого и дополнительно, хотя и не обязательно - строка меню.
+Jpanel - панель содержимого, на ней располагаются визуальные компоненты, когда компонент
+добавляется в контейнер верхнего уровня - он попадает на панель содержимого.
+
+--- Всплывающие окна ---
+// message
+JFrame frame = new JFrame();
+JOptionPane.showMessageDialog(frame, "Кэшбэк можно вносить только 1 раз");
+
+https://docs.oracle.com/javase/tutorial/uiswing/components/dialog.html
+
+// error
+JOptionPane.showMessageDialog(frame,
+    "Eggs are not supposed to be green.",   // message
+    "Inane error",                          // title
+    JOptionPane.ERROR_MESSAGE);
+
+// warning
+JOptionPane.showMessageDialog(frame,
+    "Eggs are not supposed to be green.",   // message
+    "Inane warning",                        // title
+    JOptionPane.WARNING_MESSAGE);
+
+// yes no
+int n = JOptionPane.showConfirmDialog(
+    frame,
+    "Would you like green eggs and ham?",
+    "An Inane Question",
+    JOptionPane.YES_NO_OPTION);
+
+// yes no - custom names
+Object[] options = {"Yes, please",
+                    "No way!"};
+int n = JOptionPane.showOptionDialog(frame,
+    "Would you like green eggs and ham?",
+    "A Silly Question",
+    JOptionPane.YES_NO_OPTION,
+    JOptionPane.QUESTION_MESSAGE,
+    null,     //do not use a custom Icon
+    options,  //the titles of buttons
+    options[0]); //default button title

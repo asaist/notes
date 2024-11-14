@@ -1,0 +1,1239 @@
+# Flutter - framework on Dart and tools
+# Dart - programming language
+
+MobX GetIt если нужны переводы SLANG
+
+--- About ----------------------------------------------------------------------------
+Flutter это фреймворк для создания UI для различных платформ, используется единый язык
+Dart - programming language of Google
+Приложение на флаттере - набор виджетов, все состоит из виджетов
+
+
+--- setings -----------------------------------
+1. https://docs.flutter.dev/get-started/install
+после установки весх компонентов могут быть ошибки:
+    unable to find bundled java version - Go to "C:\Program Files\Android\Android Studio"
+    then copy the content of jbr and paste the content into jre folder
+    cd ~/android-studio/ && ln -s jbr jre - for linux
+    flutter config --android-studio-dir=/home/ivan/Programming/android-studio
+    
+    unable to confirm if installed Windows version is 10 or greater - 
+    flutter upgrade
+    flutter channel
+    flutter channel master
+    flutter upgrade
+    flutter channel
+2. install plugin for VSCode
+  Flutter
+  Dart
+  Dart Data Class Generator - пакет для VSCode - по нажатию(Ctrl + . / Alt + Enter) генерирует все что угодно
+3. Config files
+    pubspec.yaml - specifies basic information about your app, such as its current version,
+    its dependencies, and the assets with which it will ship
+    analysis_options.yaml - настройки для анализатора
+
+--- terminal commands ---
+flutter create my-project   # create new flutter project with name 'my-project'
+flutter run                 # run project
+dart pub add pedantic_mono  # добавить пакет
+dart pub get                # обновить пакеты согласно pubspec.yaml
+
+--- project ---
+android/        - полная сборка для различных платформ - все заполняется авто
+ios/            ...
+linux/          ...
+windows/        ...
+build/          - различные файлы компилляции для flutter sdk - все на автомате
+test/           - авто тесты
+images/         - папка с нашими изображениями
+fonts/          - наши скаченный шрифты
+.metadata       - атоматич файл для flutter
+.packages       ...
+.my-proj.iml    ...
+pubspec.lock    ...
+pubspec.yaml    - описание, всякие зависимости проекта(pub.dev), шрифты, фотки ...
+analysis_options.yaml
+lib/            - our code working directory
+  widgets/      - виджеты/верстка
+  domain/       - сущности, клиенты
+    client/     - клиенты взяимодействия с сетью HTTP
+    model/      - классы связ с таблицами в БД, можно назвать entity
+  resources/    - разл ресурсы
+
+--- pubspec.yaml ---
+name: flutter_complete_guide
+description: A new Flutter project.
+publish_to: 'none'                    # Remove this line if you wish to publish to pub.dev
+version: 0.1.0+1                      # версия нашего проекта
+environment:                          # окружение
+  sdk: '>=2.19.0 <3.0.0'              # версия нашей sdk должна попадать в диапазон
+                                        смотреть flutter --version (Tools • Dart 2.19.2)
+dependencies:                         # зависимости на проде, берем с pub.dev
+  flutter:                            # стандартная необходимая библиотека
+    sdk: flutter                      
+  cupertino_icons: ^1.0.2             # иконки для ios
+  pedantic: ^1.11.0                   # подключение сторонней либы с pub.dev
+dev_dependencies:                     # зависимости только для разработки, в прод не идет
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+flutter:                              # подключение различн шрифтов иконок итд
+  uses-material-design: true
+  fonts:                              # шрифты
+    - family: Rubik                   # определенный скаченный шрифт
+      fonts:
+        - asset: fonts/Rubik-VariableFont_wght.ttf
+
+--- analysis_options.yaml ---
+include: package:pedantic/analysis_options.1.11.0.yaml  # наш подключ пакет версия та же
+
+analyzer:                             # свои настройки
+  strong-mode: 
+    implicit-casts: false             #
+    implicit-dynamic: false           # динамик типы будет запрещать
+
+linter:
+  rules:
+    - prefer_const_constructors       # где можно const - подсветит
+    - prefer_const_declarations
+    - avoid_print                     # запретить print()
+    - use_key_in_widget_constructors
+
+--- structure ---
+           My App
+             |
+        My Home Page
+        /          \
+Some Widget     Other Widget
+
+lib/main.dart - main file of app
+
+import 'package:flutter/material.dart'; // импорт пакета - доступен так как в pubspec.yaml
+                                           прописаны dependencies: flutter
+                                           material.dart - набор виджетов для Android
+void main() {                         - точка старта, вызывается при запускe приложения 
+    runApp(MyApp());                  - функция из импортированного пакета material, приним
+}                                       виджет, который вызывает build() - отрисовка
+
+class MyApp extends StatelessWidget { - класс наслед от виджета, все эл приложения - виджеты
+  const MyApp({super.key});             code in MyApp sets up the whole app. It creates the 
+    @override                           app-wide state, names the app, defines the visual theme
+    Widget build(BuildContext context){ - context - метаданные исп флаттеров о тек виджете
+      return ChangeNotifierProvider(  - обязывает все виджеты хранить текущее состояние(ниже)
+        create: (context) => MyAppState(),
+        child: MaterialApp(
+        title: 'Namer App',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+        ),
+        home: MyHomePage(),
+      ),
+    );
+  }
+}
+
+class MyAppState exts ChangeNotifier{ - класс опред состояние, определяет данные, которые
+  var current = WordPair.random();      будут использоваться функциями. ChangeNotifier -
+                                        если будут изменения - все виджеты будут знать
+  void getNext() {                    - какой-то обработчик 
+    current = WordPair.random();      - действия
+    notifyListeners();                - посылает уведомления виджетам(кто подписан)
+  }                                     об изменениях
+
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {- автоматически выз при изменении виджета
+    var appState = context.watch<MyAppState>();  - каждый виджет просм текущее App сост
+    return Scaffold(                  - кажд виджет возвращ другой виджет/дерево виджетов
+      body: Column(                     Scaffold - часто исп полезный виджет
+        children: [                   - Column - один из базовых layout of widget
+          Text('A random good idea:'),  вставляет люб кол-во children в колонку сверху-вниз
+          Text(appState.hui),         - Text widget  
+          Text(appState.current.asLowerCase), - обращение к состоянию appState(выше),
+                                                получение знач переменной
+          // add the button
+          ElevatedButton(
+            onPressed: () {
+              appState.getNext();     - привязываем обработчик на кнопку
+            },
+            child: Text('Next'),
+          ),
+        ],                            - запятые можно оставлять у посл элем для удобства
+      ),                                вставки других элементов потом(также с , на конце)
+
+
+--- Widgets ------------------------------------------------
+Виджеты         - это классы Dart, которые имеют build метод
+Widget          - главный базовый виджет, предок для всех
+Widget catalog  - все виджеты flutter на сайте по категориям  с описанием
+
+Типы виджетов:
+visible/видимые виджеты:  Text(), ElevatedButton(), Card() ...
+unvisible виджеты:        определяющие структуру и контроль - Center(), Column()..
+
+Material Disign - это система дизайна, созданная Google, чтобы помочь командам 
+создавать высококачественные цифровые приложения для Android, iOS, Flutter и Интернета
+Material Guidelines - рекомендации следования дизайну от Google.
+
+MaterialApp   - базовый root виджет, предоставляет доступ к множеству др виджетов,
+                следует Material Guidelines. Используем этот всегда! Должен быть
+                возвращен на самом верхнем уровне из нашего приложения, которое
+                запускается в main()
+CupertinoApp  - брат MaterialApp только все под Apple ios
+
+--- Свои виджеты ---
+1. Каждый виджет должен быть унаследован от одного из 2-х виджетов
+     StatelessWidget - формируется при вызове конструктора и не меняется runtime
+     StatefulWidget  - может менять свое внутреннее состояние(меняет виджеты)
+2. Необходимо добавить/переопределить build метод - который принимает BuildContext и
+   возвращает Widget и он рисуется флаттером. Для StatelessWidget вызывается 1 раз.
+   В этом методе как раз вся структура для отрисовки виджета.
+3. Обычно под 1 класс - 1 файл, редко 2 виджета в 1 файле
+
+--- StatelessWidget ---
+Не хранит никакого состояния, всегда все виджеты создаются заново с пом build
+Использоывать const везде где только можно!
+
+Внутреннее строение - дерево виджетов, дерево элементов
+дерево виджетов   дерево элементов
+MaterialApp       MaterialApp
+  Scaffold          Scaffold
+    Container         Container
+      Row               Row
+        Text              Text
+        Text              Text
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(...                // отрисовка виджетов тут
+  }}
+
+--- StatefulWidget ---
+Хранит сосотояние, подходит для динамичных виджетов, имеет доступ к самому виджету,
+а также доступ к контексту.
+Внутреннее строение - дерево виджетов, дерево элементов, состояние
+Дерево виджетов - пишет программист
+Дерево элементов - flutter создает по дереву виджетов, используется программой
+Состояние - данные связанные с деревом элементов
+дерево виджетов   дерево элементов  состояние
+MaterialApp       MaterialApp       _MaterialApp
+  Scaffold          Scaffold        _Scaffold
+    Container         Container     _Container
+      Row               Row         _Row
+        Text              Text      _Text
+        Text              Text      _Text
+При пересоздании виджетов, если он не менялся, то элементы не пересоздаются. 
+Сосотояние живет с элементами. 
+
+Жизненный цикл StatefulWidget:
+1. создается виджет
+2. у него вызывается createState()
+3. создается состояние
+4. к состоянию цепляется контекст
+5. вызывается initState() - 1 раз
+6. выз-ся didChangeDependencies() - выше по дереву обновился инхерит
+7. выз-ся build()
+8. deactivate() если виджет деактивирован, может вернуться с пом build()
+9. dispose() удалился виджет на совсем - здесь закрываем все что нужно
+
+Доп методы состояния:
+1. didUpdateWidget()  - выз-ся если виджет изменился
+2. reassemble() - произшел хот релоад(отладка)
+3. didChangeDependencies() - выше по дереву обновился инхерит/модель
+
+// разделен как бы на 2 класса Основной+Состояние(с build методом)
+class MyApp extends StatefulWidget {      // <--------------------------+
+  @override                                                             |
+  State<MyApp> createState() {  // переопред createState()              |
+    return _MyAppState();       // возвращ класс ниже --+               |
+  }}  //      v-----------------------------------------+               |
+                                                                        |
+// State - здесь вся                                                    |
+class _MyAppState extends State<MyApp> {  // привязка к классу MyApp ---+
+  var _questionIndex = 0;     // какие-то данные
+  void _answerQuestion() {    // обработчик кнопки приватный, только в классе
+    setState(() {             // отрисовывает виджет заново build() --------+
+      _questionIndex++;       // private переменная - исп только в классе   |
+    )});                                                                    |
+  }                                                                         |
+  @override                   // вся верстка в этом методе                  |
+  Widget build(BuildContext context) {  <-----------------------------------+
+    return MaterialApp(...    // отрисовка виджетов тут
+  
+  @override                   // определяется 1 раз - здесь инициализация
+  void InitState() {             есть доступ к context
+    super.initState();
+
+    _myController.addListener(foo);
+  }
+}
+
+--- Базовые виджеты ---
+MaterialApp(                  // корн виджет, который должен быть на самом верху
+  title: 'some title',        // заголовок на вкладке(для веб)
+  theme: ThemeData(           // темы для различ виджетов
+    appBarTheme: AppBarTheme(backgroundColor: AppColors.darkBlue),
+    bottomNavigationBarTheme:
+  home: Text('some text'),    // основное тело - весь экран
+
+Scaffold(                     // базовый дизайн и структура страницы/каркас экрана
+  appBar: AppBar(             // бар, передадим ему AppBar() - который включ много чего
+  body: Column(               // тело содержащее основное на странице
+
+Center(                       // выравнивает все по центру
+  child: ...                  // содержит др виджет
+
+Align(                        // типа Center но может выравнивать и по другим краям
+  alignment: Alignment.bottomRight,
+
+Container(                    // содержит др виджет
+  color: Colors.cyan,         // можно задать цвет
+  width: double.infinity,     // макс ширина 
+  height: 120,
+  child: ...,
+  margin: EdgeInsets.only(left: 20, right: 20),               // внешние отступы
+  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10), // внутренние отступы
+  clipBehavior: Clip.hardAge, // обрезка краев контента под контейнер
+  decoration: BoxDecoration(  // доп декор всего
+    border:                     
+    borderRadius:
+    boxShadow: BoxShadow(     // настройка теней
+      color:
+      blurRudius:
+      offset:
+    )
+
+SafeArea(                     // можно обернуть люб виджет, чтобы он не залез на системное
+  child:                         пространство(например app bar в андройде)
+
+Row(                          // контейнер для виджетов, занимает все пространство по верт
+Column(                       // контейнер для виджетов, занимает все пространство по гориз
+  mainAxisAlignment: ... ,    // выравнивание относ глав оси (center, start, spaceAround..)
+  crossAxisAlignment: ... ,   // выравнивание относ другой оси (center, start, end..)
+  mainAxisSize: ...           // MainAxisSize.min - займет по макс размеру чайлдов
+  children: [ ...             // может содержать множество виджетов
+  Spacer()                    // пробел максимально возможной длины между эл в Row
+
+SizedBox(                     // просто отступ в любом месте
+  width: 20,                  // можно чисто отступ по вертикали или гориз, или оба
+  height: 30,
+
+Text(                         // отображение текста
+  'some text',                // позиц парам строка
+  maxLines: 1,                // max lines      
+  overflow: TextOverglow.elipsis, // обрезка текста если длинный - точками
+  style: TextStyle(           // различные стили для текста
+    color: Colors.black,
+    backgroundColor: Colors.orange,
+    fontSize: 20,
+    fontFamily: 'Rubik',      // ---------------------------------------------+
+                                                                              |
+# Свой шрифт:                                                                 |
+заходим в google fonts и скачиваем понравившийся                              |
+перенесем шрифт .ttf из скаченного архива в новую дир в корне проекта fonts/  |
+в pubspec.yaml добавим/расскомментим                                          |
+  fonts:                                                                      |
+    - family: Rubik   <-------------------------------------------------------+
+      fonts:
+        - asset: fonts/Rubik-VariableFont_wght.ttf
+
+Stack(                          // стопка элементов 1 на другом допустим pic+text
+  fit: StackFit.loose,          // занимаемое пространство
+  alignment: Alignment.center,  // выравнивание
+  children: [                   // виджеты в стэке
+
+Positioned(                     // изменение позиции/отступа относ родителя
+  left: 40,                     // используется в стэке
+  top: ..
+
+DecoratedBox(                   // еще один элемент декора блока
+  decoration: BoxDecoration(
+    border: ...
+    borderRadius: ...
+
+  )
+)
+
+--- layout -----------------------------------------------------------------------
+Виджет может указать сколько места он займет width, height. Но не всегда получится
+это сделать - тут все зависит от родителя.
+Родительский виджет может указать дочернему ограничения по занимаемому месту
+min width, max width, min height, max height.
+По умолчанию у разных виджетов разные ограничения для потомков, например контейнер
+имеет все min и max ограничения равнными его размеров, т.е. чайлд не может занять
+меньше, но можно это переопределить (см пример). А Центр дает возможность выставить
+размеры любые, но не больше его собственных.
+
+CostrainedBox();    // заменяет constraints родителя на свои
+UncostraintBox();   // снимает у чайлда ограничения родителя
+OverflowBox();      // снимает у чайлда ограничения родителя и не выводит предупреждений
+FitterBox();        // растягивает чайлда до своих размеров, удобен в использовании в 
+                       каких то местах где не помещается текст - сжимается в размерах
+Expanded();         // чайлдд занимает все возможное пространство например элемент A 
+                       в строке: A______BCD => A-expanded, несколько таких делят пустое
+                       пространство меж собой, можно регулировать праметрм flex:
+Flexible();         // делят пустое пространство между собой но не заходят не больше
+                       половины(в случае 2-х Flexible)
+
+Center(                       // Center позволяет чайлду выставлять размеры --+
+  child: Container(           // Container будет занимать 200xmax <-----------+
+    width: double.infinity,   // вся ширина     
+    height: 200,              // какие то свои размеры
+    constraints: BoxConstraints(maxHeight: 150),  // различн ограничения для чайлдов <-+
+    color: Colors.amber,                                                               |
+    child: Container(         // ограничен по высоте, по ширине - ширина родителя      |   
+      width: 50,              // здесь родитель не даст занять меньше                  |
+      height: 200,            // будет 150, потомучто ограничил родитель --------------+
+      color: Colors.black,
+
+--- Custom layouts widget---
+// single - редко используется
+CustomSingleChildLayout(      // тонкая настройка для 1 виджета--+
+  delegate: MyDelegate(),     // сюда вставл класс ниже          |
+  child: Widget               // виджет <------------------------+
+
+class MyDelegate extends SingleChildLayoutDelegate {
+  houldRelayout                         // обяз, можно вернуть true
+  Size getSize                          // собственные ограничения
+  BoxConstraints getConstraintsForChild // ограничения для чайлдов
+  Offset getPositionForChild            // офсет
+}
+
+// multi - например расположить элементы на экране в определенных частях
+   экрана , определенных размеров.
+ustomMultiChildLayout(
+  delegate: MyMultiDelegate(),  // делегат определяется ниже
+  children: [                   // список лэйаутов
+    LayoutId(                   // только такие структуры могут тут быть  
+      id: 1,                    // id должны быть разными(могут быть строками)
+      child: Text(              // виджеты
+          'data-left'),
+    ),
+    LayoutId(
+      id: 2,
+      child: Text(
+          'data-midle'),
+    ),
+
+class MyMultiDelegate extends MultiChildLayoutDelegate {
+  @override
+  void performLayout(Size size) {
+    if (hasChild(1) && hasChild(2) && hasChild(3)) {  // проверка по id
+      // размеры чайлдов
+      layoutChild(1, BoxConstraints.loose(Size(size.width * 2 / 3, size.height)));
+      layoutChild(2, BoxConstraints.tight(Size(size.width / 6, size.height)));
+      layoutChild(3, BoxConstraints.loose(Size(size.width / 6, size.height)));
+      // отступ от 0:0 чайлдов
+      positionChild(1, Offset(0, size.height / 2));
+      positionChild(2, Offset(size.width * 2 / 3, size.height * 1 / 2));
+      positionChild(
+          3, Offset(size.width - size.width * 1 / 6, size.height * 1 / 2));
+    }
+  }
+
+  BoxConstraints.loose - не больший size
+  BoxConstraints.tight - точный size
+
+  @override
+  bool shouldRelayout(covariant MultiChildLayoutDelegate oldDelegate) {
+    return true;
+  }
+}
+
+
+--- Scroll -------------------------------------------
+// вызывает build/initState всех элементов сразу, используется
+   для небольших списков, для больших - ListView
+SingleChildScrollView(            // скролит 1 элемент
+  scrollDirection: Axis.vertical, // гориз скролл
+  controller: controller,         // приним скролл контроллер(для sf)
+  child: Column(                  // скролищейся элемсент
+    children: widgets,            // виджеты
+
+// вызывает build/initState элементов только при скролле на них
+   использовать для всего
+ListView(                         // обычн конструктор
+  children: [ ...                 // виджеты
+ListView.builder(                 // строит/удаляет виджеты автом при скрол
+  itemCounts: 10,                 // кол-во элементов
+  itemExtend: 163,                // высота виджетов
+  padding: EdgeInsets.only(top:5) // отступ сверху изначальный
+  itemBuilder: (context, index) => Text('hi $index'), // с пом этого
+  addAutomaticKeepAlives: false,  // пытаться сохранить состояние виджетов
+ListView.separated(               // как builder, только генерит между -+
+  itemBuilder:                    // виджеты                            |
+  separatedBuilder:               // виджеты между виджетами <----------+
+// Для нек виджетов не нужно удалять содержимое (TextFueld например) -
+   можно в ListView.builder в itemBuilder засунуть свой sf видж c миксином 
+   AutomaticKeepAliveClientMixin
+
+ScrollController();               // всякие настройки
+controller.jumpTo(400)            // прыг на опр офсет
+controller.animateTo(...)         // прыг на опр офсет плавно
+
+
+--- buttons -------------------------------------------------------------
+ElevatedButton(                                     // закрашенная кнопка
+OutlinedButton(                                     // закраш outline 
+TextButton(                                         // без рамок кнопка
+  onPressed: () => print('pressed'),                // callback function
+  child: Text('press'),                             // текст кнопки
+  style: ButtonStyle(                               // стили кнопок(цвет,форма..)
+    backgroundColor: MaterialStateProperty.all(Colors.amber)),
+    foregroundColor:
+
+IconButton(                                         // кнопка - иконка
+  onPressed: callback,                              // void функ без парам, если есть парам то как выше
+  iconSize: 50,                                     // размер иконки
+  splashRadius: 100,                                // круг при навед/нажат
+  icon: Icon(                                       // иконка вместо текста
+    Icons.abc,
+
+// В кнопки можно заворачивать не только текст - а любой виджет,
+TextButton(                                         
+  child: Row(...                                    // все будет кнопкой
+
+
+--- Navigation ---------------------------
+Длф навигации используется класс Navigator.
+навигатор умеет переходить вперед, возвращаться назад, провер возможность этого.
+
+
+final navigator = Navigator.of(context);  // получить текущий навигатор
+
+// Навигатору передается route в котором определен builder: что открыть
+final route = MaterialPageRoute<void>(builder: (context) => MyWidget());
+
+Переходы:
+navigator.push(route);  // переход, появится кнопка назад на предыдущ виджет
+navigator.pushNamed('/main_screen');            // переход по url (см ниже)
+                                                   добавляется в стэк нов виджет
+navigator.pushReplacementNamed('/main_screen'); // то же но нет стрелки назад,
+                                                   убирает из стэка пред виджет
+Navigator.of(context).pop();                    // переход назад
+Navigator.of(context).canPop();                 // возможен ли переход
+Navigator.of(context).pushNamed(                // передать аргументы при переходе
+  '/main_screen',
+  arguments: myArgs,
+)
+
+// убираем home: из главного виджета и пропишем маршруты
+return MaterialApp(
+  theme: ThemeData(
+      appBarTheme:  // общая тема для AppBar всех страниц
+          AppBarTheme(backgroundColor: Color.fromARGB(255, 0, 34, 61))),
+  routes: {
+    '/auth': (context) => AuthWidget(),
+    '/main_screen': (context) => MainScreenWidget(), 
+    '/her': (context) {                         // передача по этому роуту аргуиентов
+      final myArgs = ModalRoute.of(context)?.settings.arguments as int;
+      return MainScreenWidget(id: myArgs);      // передача в конструктор 
+    }
+  },                                                   
+  initialRoute: '/auth',  // этот вместо home:
+  // использовать только если необходимо, иначе всегда есть куда перейти(стрелка)
+  onGenerateRoute: (settings) => MaterialPageRoute<void>( // если переходим по неправ
+        builder: (context) => Text('Wrong path!'),           пути вызовется этот метод
+      ),                                                     и откроет нов экран
+                                                             кнопка назад будет всегда
+                                                             активна.
+
+  Маршрутизация:
+  /       - корень
+  /main   - с этой страницы автоматически будет кнопка назад в корень
+  /sacond - с min не пересикается
+  /main/a - а с этой в /main
+
+
+--- Bottom navigaiton bar -----------
+// стили в MaterialApp
+bottomNavigationBarTheme: BottomNavigationBarThemeData(
+  backgroundColor: AppColors.darkBlue,
+  selectedItemColor: Colors.white,
+  unselectedItemColor: Colors.grey,
+// Добавляется в Scaffold
+body: Center(
+  child: _widgets[_selectedTab],          // перерисовка в завис от инд 
+),                                           _widgets - массив наших видж
+bottomNavigationBar: BottomNavigationBar(
+  currentIndex: _selectedTab,             // переменная обновляемыя в setState
+  items: [                                   выбранная вкладочка в баре
+    BottomNavigationBarItem(
+      icon: Icon(Icons.access_time),
+      label: 'her',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.money),
+      label: 'hui',
+    ),
+  ],
+  onTap: onSelectTab,                     // наша функция кот обновляет индекс
+
+
+--- TextField --------------------------------------------------------------
+Виджет текстового поля ввода
+Имеет несколько состояний в decorator:
+  enabled:
+    focused (можно вводить текст)
+    error
+    error + focused
+  disabled
+под каждый есть свой декороатор и можно настроить
+
+--- decoration ---
+Настройка видимости самого поля, все кроме текста
+TextField(
+  decoration: InputDecoration(            // различные настройки отображения
+    enabled: true,                        // состояние enabled/disabled
+    border: OutlineInputBorder(),         // рамка вокруг общий стиль
+    disabledBorder: OutlineInputBorder(), // рамка вогруг неактивного поля
+    enabledBorder: OutlineInputBorder(    // активное поле со своим стилем
+      borderSide: BorderSide(             // сама рамка, имеет настройки
+        color: Colors.green),
+        width: 5,
+      borderRadius: BorderRadius.all(     // скругление
+                Radius.circular(50),
+    focusedBorder: UnderlineInputBorder() // в фокусе
+    labelText: 'Hello',                   // label поля - отображ в рамке
+    labelStyle: TextStyle(                // стиль label
+      color: Colors.deepOrange,
+    helperText: 'Fuck you',               // текст подсказка снизу рамки
+    helperStyle: TextStyle(),             // ее стиль
+    helperMaxLines: 1,                    // макс кол-во строк подсказки
+    hintText: 'huohuohuou',               // placeholder в поле при фокусе 
+    hintStyle: TextStyle(                 // стиль
+      color: Colors.black12,
+    floatingLabelBehavior:                // настройка анимации лэйбла 
+      FloatingLabelBehavior.always,       // always/never поведение label
+    errorText: null,                      // если не null то рамка errorBorder + текст
+    icon: Icon(Icons.access_time),        // иконка перед полем
+    prefixIcon: Icon(Icons.money),        // иконка внутри поля перед текстом
+    prefix: Text('pre'),                  // виджет перед текстом
+    prefixText: 'pre',                    // текст перед текстом
+    suffixIcon: ...                       // после
+    suffixText: ...                       // после
+    isCollapsed: true,                    // сжать до минимума(убрать иконки, лэйблы)
+    contentPadding: EdgeInsets.all(30),   // если isCollapsed - настройка паддинга
+    filled: true,                         // заполнять поля
+    fillColor: Colors.amber,              // этим цветом
+    hoverColor: Colors.black,             // при наведении этим цветом
+
+--- root settings ---
+Общие настройки поля и текста
+TextField(
+  enabled: true,                          // глоб состояние enabled/disabled
+  readOnly: true,                         // активное, но вводить ничего не получится
+  textInputAction:                        // действия при нажатии (enter) много всего
+    TextInputAction.done,                 // выйти из фокуса
+    TextInputAction.next,                 // переход на след поле 
+  keyboardType: TextInputType.number,     // тип клавы для мобилок
+  showCursor: true,                       // показывать курсор в поле
+  cursorWidth: 2.0,                       // разл настройки курсора внутри поля
+  obscureText: true,                      // точки для password
+  obscuringCharacter: '&',                // символ вместо точек в password
+  autocorrect: false,                     // откл автокоррект
+  enableSuggestions: false,               // откл предлож вар-ты(мобилка)
+  style: TextStyle(fontSize: 30,          // настройки самого текста в поле
+  maxLines: 2,                            // максимально строк
+  minLines: 2,                            // минимально строк
+  maxLength: 100,                         // макс кол-во символов
+  textAlign: TextAlign.center,            // текст по центру
+
+--- events ---
+Управление взаимодействиями с полем
+// функции для обработки событий
+void _onChanged(String text) => print('_onChanged $text');
+void _onEditingComplete() => print('_onEditingComplete');
+void _onSubmitted(String text) => print('_onSubmitted $text');
+
+TextField(
+  controller: _controllerOne,             // подключить контроллер
+  focusNode: _nodeOne,                    // фокус поля
+  onChanged: _onChanged,                  // что-то меняется в поле
+  onEditingComplete: _onEditingComplete,  // нажатие enter
+  onSubmitted: _onSubmitted,              // нажатие enter
+  onTap: _onTab,                          // нажать на поле
+
+--- controllers ---
+Управление текстом поля
+// контроллеры, 1 поле - 1 контроллер, sf widget
+final _controllerOne = TextEditingController();
+final _controllerTwo = TextEditingController('start text'); // начальный текст
+
+// работа с контроллерами удобно в ф-ии-обработчике
+_controllerOne.clear();                   // очистить поле при событии
+_controllerTwo.text = 'Hi';               // установить в поле некий текст
+_controllerOne.addListener(foo);          // доб listener реагирует на изменения
+                                             эквивалент событию onChanged
+_controllerOne.removeListener(foo);       // удалить listener
+_controllerOne.value = TextEditingValue(  // манипуляции с текстом
+      text: 'one',                        // тот самый текст
+      selection: TextSelection.collapsed(offset: 5),  // позиц курсора
+_controllerOne 
+
+--- focus ---
+Управление фокусом поля
+TextField(
+  focusNode: _nodeOne,                    // фокус поля
+
+void foo() {
+  _nodeOne.requestFocus();                // сделать фокус
+  _nodeOne.unFocus();                     // убрать фокус
+  _nodeOne.hasFocus();                    // в фокусе?
+  _nodeOne.nextFocus();                   // сл TextField фокус
+  _nodeOne.addListener((){});             // можно навесить listener
+}
+
+--- formatters ---
+Форматирование текста на лету
+TextField(
+  inputFormatters: [                      // список форматтеров
+    FilteringTextInputFormatter.digitsOnly,             // только цифры
+    FilteringTextInputFormatter.allow(RegExp(r'\d+')),  // только под regex
+    FilteringTextInputFormatter.deny(RegExp(r'0+')),    // запред под regex
+    MyFormatter(),                                      // свой форматтер
+  ],
+
+// свой форматтер
+class MyFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    return TextEditingValue(
+      text: digitsOnly,
+      selection: TextSelection.collapsed(offset: digitsOnly.length),
+
+
+--- Pictires ----------------------------------------------------------
+создать папку images в корне проекта
+# pubspec.yaml
+flutter:
+  uses-material-design: true
+  assets:
+    - images/audio.png  # добавим наши картинки
+  fonts:
+
+// отдельный класс в lib/screens с картинками
+abstract class AppImages {
+  static const AssetImage audio = AssetImage('images/audio.png');
+}
+// в классе
+Center(
+  child: Image(image: AppImages.audio), 
+);
+
+
+--- Clicks -------------------------------------------------------------
+Виджет в качестве кнопки, например строка - кнопка
+1. можно завернуть в Button - плохой вариант
+2. можно завернуть в GestureDetector, нажатия без эффекта нажатия
+  GestureDetector(
+    onTap: () => print('hui'),
+    child: Row(...
+3. лучший способ с анимацией клика
+  return Material(
+    color: Colors.transparent,      // прозрачный цвет(может не нужно)
+    child: InkWell(                 // обработка самого клика
+      onTap: () => print('hui'),    // callback
+      borderRadius: ...             // настройки сплэша
+      child: Row(...                // any widgets
+
+
+--- Keys ------------------------------------------------------------------------
+Это класс-идентификатор виджета (id)
+Когда использовать:
+  Для корректного премещения виджета в дереве виджетов
+  Для сохранения стандартного сотояния виджета(позиция скролла, фокус), в те моменты
+  когда он удаляется из дерева.
+
+              Keys                            Уникальные:           Со значением:
+          /         \                           GlobalKey             ObjectKey
+GlobalKey             LocalKey                  LabeledObjectKey      ValueKey
+  GlobalObjectKey       ObjectKey               UniqueKey             PageStorageKey
+  LabeledObjectKey      UniqueKey                                     GlobalObjectKey
+                        ValueKey  
+                          PageStorageKey
+
+final key = GlobalKey();            // глобальный ключ
+final key = GlobalKey<_MyClass>();  // глобальный ключ под опр класс
+final localKey = UniqueKey();       // локальный, виден например в списках
+this.key;                           // каждый виджет имеет ключ
+this.key == localKey                // сравнения ключей
+final valueKey = ValueKey('some');  // ключ с каким то примитивным значением
+valueKey == ValueKey('some')        // сравнение ключей-значений
+final valueKey = ValueKey(obj);     // ключ с любым объектом внутри
+
+Flutter при изменении дерева виджетов сравнивает элементы между собой по классу,
+в ситуациях когда классы одинаковые, можно передать им уникальные ключи,
+для того чтобы сравнение проходило также по ключу
+MyWidget(key: UniqueKey());         // например так - теперь будет рассматриваться
+MyWidget(key: UniqueKey());            изменение именно этого виджета
+
+PageStorageKey('первая страница..') // используется для запоминания стандартного сост виджета
+
+
+--- BuildContext ------------------------------------------------------------
+Это объект который позволяет получить всю информацию которая окружает виджет,
+все что связано с виджетом.
+Можно найти любой объект дерева с пом котекста.
+У каждого виджета есть свой контекст
+свойства контекста:
+  size              // размеры
+  widget            // сам виджет
+  InheritedElement  // 
+  InheritedWidget   // 
+  State             // состояние
+  RenderObject      // объект котор связан с дерев эл(для отображения)
+  Element           // элемент из дерева элементов
+
+Получить контекст
+1. в методе build() - контекст того виджета в котором переопр этот метод
+2. различные билдеры ListView.builder, LayoutBuilder
+3. State(в sf) имеет свойство context этого виджета в кот опред
+4. GlobalKey - контекст виджета с которым связан этот ключ
+
+// получение из метода build()
+@override
+Widget build(BuildContext context) {
+  return Center(
+    child: ElevatedButton(
+      onPressed: () => foo(context),                  // прокидываем контекст в ф-ю и вертим как хотим
+      child:Text('go'))
+  );
+
+// получение из билдера(не очень)
+return Center(
+  child: Builder(builder: (BuildContext context) {    // Builder нужен для получения контекста Builder
+    return ElevatedButton(
+      onPressed: () => foo(context), child: Text('press'));
+  }),
+
+// получить через State
+this.context;                                         // в любом месте класса _..State
+
+// получение по GlobalKey(не очень)
+final key GlobalKey<_MyClassState>();                 // создаем глоб ключ в глоб видимости
+...
+key:key                                               // добавляем ключ к виджету
+...
+key.currentState                                      // достать контекст
+
+// поиск стейта(не очень - использовать инхерит)
+context.findAncestorStateOfType<_MyClassState>();     // первый родитель класса _MyClassState(state class у sf)
+context.findRootAncestorStateOfType<_MyClassState>(); // root родитель класса _MyClassState(state class у sf)
+context.visitAncestorElements(foo);                   // перебирает предков использует на них foo
+context.visitChildElements(foo);                      // перебирает потомков использует на них foo
+
+
+--- Inherited -----------------------------------------------------------------
+Инхериты - Провайдеры
+Виджет служит для передачи какого-то связанного с ним значения своим потомкам
+с инхеритом могут работать только его дочерние виджеты, если они подписаны на инхерит, и получили
+уведомление об изменении (updateShouldNotify) то виджет перерисовывается.
+Если в инхерите несколько значений, а виджеты подписаны только на определенные и 
+изменилась другая переменная, то подписанный виджет все равно обновится => использовать InheritedModel
+
+// инхерит
+class DataProviderInherit extends InheritedWidget {
+  final int value;                                    // передаваемое значение
+  const DataProviderInherit({                         // конструктор
+    super.key,                                        // ключ
+    required super.child,                             // чайлд виджет
+    required this.value});                            // наше значение
+
+  @override
+  bool updateShouldNotify(DataProviderInherit old) {  // уведомляет потомков об изменении значения
+    return value != old.value;                        // если значение изменилось - уведомляем
+  }
+}
+
+// sf класс(его state класс) который передает данные потомкам через инхерит
+class _DataOwnerStatefullState extends State<DataOwnerStatefull> {
+  var _value = 0;                                     // обновляемое значение
+
+  void _increment() {                                 // foo
+    _value++;                                         // обновить
+    setState(() {});                                  // перерисовка (build())
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        ElevatedButton(
+          onPressed: _increment,
+          child: Text('press'),
+        ),
+        DataProviderInherit(                          // оборачиваем классы которым будет доступен инхерит
+          value: _value,                              // передаем в костр инхерита наше значение
+          child: DataConsumerStateless(),             // все ниже дерево будет иметь доступ к инхериту
+
+// класс который может достать значение из инхерита - его потомок
+class DataConsumerStateless extends StatelessWidget {
+  const DataConsumerStateless({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final value = context                             // один из способов получить значение инхерита
+            .dependOnInheritedWidgetOfExactType<DataProviderInherit>()
+            ?.value ??
+        0;
+    return Container(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text('$value'),
+          const DataConsumerStatefull(),              // делаем конст, будет обновляться через инхерит,
+                                                         только когда он изменится, а не каждый раз!
+Взаимодействия с инхеритом:
+1. Получить инхерит и не подписываться на его изменения (виджет не перерисуется)
+  final element = context
+    .getElementForInheritedWidgetOfExactType<DataProviderInherit>();
+  final dataProvider = element?.widget as DataProviderInherit;
+  final value = dataProvider.value;
+2. Получить инхерит и подписаться на его изменения - если знач изменится updateShouldNotify() - перерисуется
+  final value = context
+    .dependOnInheritedWidgetOfExactType<DataProviderInherit>()
+    ?.value ?? 0;
+3. еще есть способ просто подписаться если инхерит найден - не используется
+  context.dependOnInheritedElement(element);
+
+--- InheritedModel ---
+Обновляет виджеты которые подписаны с помощью аспектов на определенные значения инхерита,
+в остальном все как в InheritedWidget. Подходит для того чтоб не создавать много инхеритов
+class DataProviderInherit extends InheritedModel<String> {
+  final int value1;                                     // два значения
+  final int value2;
+  const DataProviderInherit(
+      {super.key,
+      required super.child,
+      required this.value1,
+      required this.value2});
+
+  @override                                             // сдесь также
+  bool updateShouldNotify(DataProviderInherit oldWidget) {
+    return value1 != oldWidget.value1 || value2 != oldWidget.value2;
+  }
+
+  @override
+  bool updateShouldNotifyDependent(
+      covariant DataProviderInherit oldWidget, Set<String> dependencies) {
+    final isValue1Updated =                             // подписка по ключу
+        value1 != oldWidget.value1 && dependencies.contains('1');
+    final isValue2Updated =                             // ключ - любой объект
+        value2 != oldWidget.value2 && dependencies.contains('2');
+    ;
+    return isValue1Updated || isValue2Updated;
+  }
+}
+
+// аспект добавляется в аргументы при подписке на инхерит
+context.dependOnInheritedWidgetOfExactType<DataProviderInherit>(aspect: '2')?.value2;
+
+--- Model ---
+Модель нужна для хранения данных и различной логики, методы, поля...
+Виджеты получают провайдера с помощью котекста и получают через него
+доступ к модели - так можно изменить данные модели.
+Чтобы известить всех о смене данных в модели используется
+
+Модель - наследуется от ChangeNotifier
+class SimpleCalcWidgetModel extends ChangeNotifier {
+  int? _firstNumber;    // данные
+  int? _secondNumber;
+  int? sumResult;
+
+  // какие-то свойства для работы с данными
+  set firstNumber(String value) => _firstNumber = int.tryParse(value);
+  set secondNumber(String value) => _secondNumber = int.tryParse(value);
+
+  void sum() {           // какой-то метод
+    int? result;
+    if (_firstNumber != null && _secondNumber != null) {
+      result = _firstNumber! + _secondNumber!;
+    } else {
+      sumResult = null;
+    }
+    if (result != sumResult) {
+      sumResult = result;
+      notifyListeners();  // фишка модели - известить всех листенеров
+    }
+  }
+}
+
+Инхерит с моделью
+class SimpleCalcWidgetProvider extends InheritedWidget {
+  final SimpleCalcWidgetModel model;                          // модель объявляем в провайдере
+  SimpleCalcWidgetProvider({required super.child, required this.model});
+
+  static SimpleCalcWidgetProvider? of(BuildContext context) { // удобный способ получить и подписаться на инхерит
+    return context
+        .dependOnInheritedWidgetOfExactType<SimpleCalcWidgetProvider>();
+  }
+
+  @override
+  bool updateShouldNotify(covariant SimpleCalcWidgetProvider oldWidget) {
+    return model != oldWidget.model;                          // уведомить всех об изменении если модль сменится
+  }                                                              если данные меняются внутри модели - нет извещ
+}                                                                приходится добавлять модели листенера
+
+Корневой sf класс(state) в котором все происходит
+class _SimpleCalcWidgetState extends State<SimpleCalcWidget> {
+  final _model = SimpleCalcWidgetModel(); // объявляем модель
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: 
+        SimpleCalcWidgetProvider(         // провайдер обеспечит доступ к нему и модели
+          model: _model,                  // устанавливаем модель(кот объявили в конструкторе провайдера) 
+          child: Column(
+            children: [                   // все элементы будут иметь доступ к провайдеру и модели
+              const FirstNumberWidget(),  // st виджет 
+              const ResultWidget(),       // sf виджет
+
+Виджеты - дочерние элементы нашего Инхерита(Провайдера) могут изменять модель
+// st виджет:
+class FirstNumberWidget extends StatelessWidget {
+  const FirstNumberWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: InputDecoration(
+        border: OutlineInputBorder(),
+      ),
+      onChanged: (value) =>               // можно на событие навешать callback который пишет значение в модель
+          SimpleCalcWidgetProvider.of(context)?.model.firstNumber = value,
+
+// sf виджет:
+class ResultWidget extends StatefulWidget {
+  const ResultWidget({super.key});
+
+  @override
+  State<ResultWidget> createState() => _ResultWidgetState();
+}
+
+class _ResultWidgetState extends State<ResultWidget> {
+  String _value = '-1';                   // sf нужен для того чтобы хранить тут значения
+
+  @override
+  void didChangeDependencies() {          // вызывается при изменении модели
+    super.didChangeDependencies();
+    final model = SimpleCalcWidgetProvider.of(context)?.model;
+    model?.addListener(() {               // добавим в модель listener, кот будет вызван когда у модели
+      _value = '${model.sumResult}';         будет вызван notifyListeners()
+      setState(() {});                    // просто меняем значение и обновляем виджет(build)
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {    // отрисовка текста
+    return Text('result: $_value');
+  }
+
+Например в TextField можно на событие навешать callback который пишет значение в модель
+onChanged: (value) =>
+  SimpleCalcWidgetProvider.of(context)?.model.secondNumber = value,
+Или кнопка - просто использует метод модели
+onPressed: () => SimpleCalcWidgetProvider.of(context)?.model.sum(),
+
+--- InheritedNotifier the best choice! ---
+Совмещает в себе оповещение модели и провайдера - теперь при изменении
+модели - все листенеры подписанные на провайдера так-же получат уведомление
+перерисоваваться будут не все, а те кто пытается допустим показать данные
+
+class SimpleCalcWidgetProvider
+    extends InheritedNotifier<SimpleCalcWidgetModel> {      // <наша модель>
+  final SimpleCalcWidgetModel model;
+  SimpleCalcWidgetProvider({
+    Key? key,
+    required this.model,                   // принимает модель
+    required Widget child,
+  }) : super(
+          key: key,
+          notifier: model,                                  // передаем в notifier модель
+          child: child,
+        );
+
+  static SimpleCalcWidgetModel? of(BuildContext context) {  // подписка - ставим на виджеты с перерисовкой
+    return context
+        .dependOnInheritedWidgetOfExactType<SimpleCalcWidgetProvider>()
+        ?.notifier;
+  }
+
+  static SimpleCalcWidgetModel? read(BuildContext context){ // без подписки - на те что перерисовывать не надо
+    final widget = context
+        .getElementForInheritedWidgetOfExactType<SimpleCalcWidgetProvider>()
+        ?.widget;
+    return widget is SimpleCalcWidgetProvider ? widget.notifier : null;
+  }
+}
+
+// Итого класс будет перерисован автоматически если он подписан на провайдера с пом of(можно назвать по другому)
+class ResultWidget extends StatelessWidget {
+  const ResultWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final value = SimpleCalcWidgetProvider.of(context)?.sumResult ?? 0;
+    return Text('$value');
+  }
+}
+
+--- Best practice ---
+Модель(ChangeNotifier)        // тут вся логика
+Провайдер(InheritedNotifier)  // доставка инфрмации в/из виджеты
+const Stateless Widgets       // тут вся верстка
+
+
+--- Работа с данными ---------------------------------------------------------------------------------------
+
+--- JSON -----------------------------------------------------------
+--- ручная сериализация (не очень, используй Serializable)---
+final jsonString = '''{                               // JSON строка
+  "name": "John Smith",
+  "email": "john@example.com"
+}'''
+
+Map<String, dynamic> userMap = jsonDecode(jsonString);// конверт из JSON строки в мэпку
+var user = User.fromJson(userMap);                    // получить User
+String newJsonString = jsonEncode(user);              // конверт из User строку JSON 
+
+// в классах применяют след методы
+class User {
+  final String name;
+  final String email;
+
+  User(this.name, this.email);
+
+  User.fromJson(Map<String, dynamic> json)            // из мэпки получить объект User
+      : name = json['name'],
+        email = json['email'];
+
+  Map<String, dynamic> toJson() => {                  // из полей User вернуть мэпку
+        'name': name,
+        'email': email,
+      };
+}
+
+--- Serializable ---
+Автоматическое генерирование методов работы с JSON
+
+dependencies:                           # pubspec.yaml подключить зависимости
+  json_annotation: <latest_version>     # версии ищем в pub.dev
+dev_dependencies:
+  build_runner:                         # если не указать - то последняя
+  json_serializable: <latest_version>
+
+> flutter pub get                       # обновиться
+
+// Класс для сериализации
+import 'package:json_annotation/json_annotation.dart';
+part 'user.g.dart';                     # укажем часть - текущ_файл.g.dart
+
+@JsonSerializable()                     # пометим класс для сериализации
+class User {
+  User(this.name, this.email);
+  String name;
+  @JsonKey(                             # различные настройки поля из коробки
+    required: true,
+    defaultValue: 'sd',
+    name: '1почта',
+  )
+  String email;
+
+  // эти методы можно будет дописать после генерации(скопировать от туда)
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  Map<String, dynamic> toJson() => _$UserToJson(this);
+}
+
+> flutter pub run build_runner build    # генерация - сформируется нов файл с логикой
+
+
+--- Сеть -----------------------------
+Пакеты/Библиотеки
+package         area
+------------------------
+dart:io         - mobile(системная либа)
+dart:html       - web(системная либа)
+http            - all
+dio             - all
+
+ 
+ --- Архитектура -------------------------------
+Блоки приложения
+
+-- Модуль
+1  - экран
+
+-- View
+2  - верстка
+10 - навигация
+9  - маппинг
+7  - стэйт
+
+-- Domain
+-- логика
+8  - бизнес логика
+-- Repository
+3  - сетевые запросы
+4  - БД
+5  - камера
+6  - геолокация
+
+--- Provider ---------------------------------------------------------
+Устанавливаем пакет с pub.dev
+provider добавляет extensions к контексту
+read<Model>()     - читать модель без подписки
+watch<Model>()    - читать модель + подписаться на изменения(будет ребилдится)
+select((Model value) => value.one) - подписка только на опред значения(только для Provider)
+// другой способ получить модель(идентичный)
+Provider.of<Model>(context, listen: true)   == context.read<Model>()
+Provider.of<Model>(context, listen: false)  == context.watch<Model>()
+
+// ChangeNotifierProvider
+1. главный виджет StatefulWidget или StatelessWidget, размещаем провайдер там
+   если нужно хранить только модель, используем StatelessWidget. 
+   dispose() модели вызывается автоматически провайдером
+class CelebApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ChangeNotifierProvider( // провайдер
+        create: (context) => CelebModel(),                      // замык, возвращающее модель
+        child: const CelebView(),                               // дерево виджетов которому будет доступна модель
+        lazy: true,                                             // создает create при обращении, не раньше
+      );
+2. верстка, обращение к модели элементами из дерева
+class CelebView extends StatelessWidget {
+  const CelebView({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final model = context.read<CelebModel>();                   // находим модель, читаем без подписки
+    return Column(
+      children: [                                               // обращение к методам модели 
+        ElevatedButton(onPressed: model.inc1, child: Text('button 1')),
+        ElevatedButton(onPressed: model.inc2, child: Text('button 2')),
+        _MyTextWidget(),                                        // виджет с watch
+3. сама модель - простой класс имеющий пару полей и пару методов
+class CelebModel extends ChangeNotifier {
+  var one = 0;
+  var two = 0;
+  void inc1() {
+    one++;
+    notifyListeners();                                          // уведомить подписчиков (watch)
+  }
+  void inc2() {
+    two++;
+    notifyListeners();
+  }
+4. Text виджет с watch
+class _MyTextWidget extends StatelessWidget {
+  const _MyTextWidget({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final value = context.watch<CelebModel>().one;              // подписка на изменение модели
+    return Text('$value');
+  }
+}

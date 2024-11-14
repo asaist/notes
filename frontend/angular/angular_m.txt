@@ -1,0 +1,473 @@
+Angular
+
+Node.js                     - это среда времени выполнения JavaScript, которая позволяет запускать JavaScript на сервере. 
+                              Он позволяет создавать серверные приложения с использованием JavaScript.
+NPM (Node Package Manager)  - это менеджер пакетов для JavaScript, который позволяет управлять зависимостями 
+                              проекта, устанавливать различные пакеты, выполнять скрипты и многое другое.
+TSC (TypeScript Compiler)   - это компилятор TypeScript, который преобразует файлы TypeScript в файлы JavaScript. 
+TypeScript                  - это язык программирования, который расширяет функциональность JavaScript, 
+                              добавляя статическую типизацию.
+Angular                     - фреймворк от Google для создания клиентских приложений 
+                              нацелен на разработку SPA-решений (Single Page Application)
+                              использует TypeScript в качестве основного языка
+AngularJS                   - старый фрейм от которого произошел Angular
+Angular CLI                 - пакет npm, упрощает создание приложения, его компиляцию
+
+
+Установить/переустановить node и npm:
+# debian
+curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - &&\
+sudo apt-get install -y nodejs
+
+# radhat
+sudo dnf install nodejs 
+
+npm i -g typescript         # установка typescript
+npm install -g @angular/cli # установка новой версии Angular CLI
+npm install -g sass         # Sass препроцессор(хз может уже встроен)
+
+
+=== Настройка проекта ========================================================================
+ng new my-proj              # создать новый проект - скелет проекта
+                              опции:
+                              --prefix      создает префикс приложения, по умолчанию 'app'
+ng g c my-comp              # создать компонент
+ng g s services/my-serv     # создать сервис в папке services
+ng version                  # версия Angular CLI
+ng update                   # обновить Angular CLI
+cd myProject                # перейти в папку где будет содержаться проект    
+vim package.json            # создать файл с конфигурацией, установка зависимостей, пакетов.. 
+npm install                 # установка всех необходимых модулей из package.json
+mkdir -p src/app            # создадим каталоги для исходников
+vim app.component.ts        # создать компонент, как минимум 1 на проект
+cd ../                      # перейдем в src
+vim main.ts                 # создать файл для запуска приложения 
+vim index.html              # создать собственно саму страничка
+vim tsconfig.json           # создать конфиг файл для TypeScript
+vim angular.json            # создать конфиг файл для Angular CLI
+ng serve --open             # запуск приложения на тестовом сервере
+ng build                    # компиляция проекта в dist/helloapp - файлы для любого веб-сервера
+
+--- Иерархия ---
+.                           # корневая дир проекта "helloapp"
+├── .angular                # служебные файлы 
+├── dist                    # релизная директория(после ng build)
+├── node_modules            # дир со всеми пакетами и зависимостями(после npm install)
+├── angular.json            # конфиг для Angular CLI
+├── package.json            # конфиг проекта - пакеты, зависимости, команды(для npm install)
+├── package-lock.json       # служебный файл
+├── tsconfig.json           # конфиг компилятора TypeScript
+└── src                     # исходный код
+    ├── app                 # дир компонентов
+    │   └── app.comp.ts     # компонент программы
+    ├── index.html          # страница на которой крутится приложение
+    └── main.ts             # точка входа в программу/запуск программы
+
+--- package.json ---
+{
+  "name": "helloapp",
+  "version": "1.0.0",
+  "description": "First Angular 17 Project",
+  "author": "Eugene Popov metanit.com",
+  "scripts": {                      -- используемые команды
+    "ng": "ng",
+    "start": "ng serve",            -- веб сервер для тестирования
+    "build": "ng build"             -- компилирует приложение
+  },
+  "dependencies": {                 -- пакеты angular, которые необходимы приложению для работы
+    "@angular/common": "~17.0.0",
+    "@angular/compiler": "~17.0.0",
+    "@angular/core": "~17.0.0",
+    "@angular/forms": "~17.0.0",
+    "@angular/platform-browser": "~17.0.0",
+    "@angular/platform-browser-dynamic": "~17.0.0",
+    "@angular/router": "~17.0.0",
+    "rxjs": "~7.8.0",
+    "zone.js": "~0.14.2"
+  },
+  "devDependencies": {              -- пакеты, которые будут использоваться для разработки
+    "@angular-devkit/build-angular": "~17.0.0",
+    "@angular/cli": "~17.0.0",
+    "@angular/compiler-cli": "~17.0.0",
+    "typescript": "~5.2.2"
+  }
+}
+
+--- tsconfig.json ---
+{
+  "compileOnSave": false,
+  "compilerOptions": {              -- параметры компиляции
+    "baseUrl": "./",
+    "sourceMap": true,
+    "declaration": false,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "lib": [
+      "ES2022",
+      "dom"
+    ]
+  },
+    "files": [ "src/main.ts" ],     -- компилируемый файл, подтягивающий все остальные
+    "include": [ "src/**/*.d.ts"]
+}
+
+--- angular.json ---
+{
+  "version": 1,                     -- версия конфигурации 
+  "projects": {                     -- нстройки для каждого проекта
+    "helloapp": {                   -- настройки нашего проекта
+      "projectType": "application", -- application - приложение можно запускать в браузере
+      "root": "",                   -- корневыая папка проекта "" - раб каталог совпадает
+      "sourceRoot": "src",          -- исходники
+      "architect": {                -- настройки для построения проекта
+        "build": {                  -- сборка
+          "builder": "@angular-devkit/build-angular:browser",       -- сборщик пакетов webpack
+          "options": {
+            "outputPath": "dist/helloapp",  -- путь, по которому будет публиковаться скомп приложение
+            "index": "src/index.html",      -- путь к главной странице приложения
+            "main": "src/main.ts",          -- путь к главному файлу приложения, где собственно запускается приложение Angular
+            "polyfills": ["zone.js"],       -- путь к файлам полифилов, в качестке которого выступает "zone.js"
+            "tsConfig": "tsconfig.json",    -- путь к файлу конфигурации TypeScript
+            "aot": true                     -- предварительная компиляция перед выполнением
+          },
+          "configurations": {               -- доп конфиг проекта
+            "production": {                 -- прод [запуск ng build --configuration production]
+              "optimization": true,         -- оптимизация
+              "outputHashing": "all",       -- в название генерируемого файла добавляться хеш-значение(all - для всех файлов)
+              "sourceMap": false,           -- будут ли генерироваться файлы sourceMap
+              "namedChunks": false,         -- имена файлов для именнованных подгружаемых чанков
+              "vendorChunk": false,         -- отдельный файл для сторонних используемых в приложении библиотек
+              "buildOptimizer": true        -- для оптимизации при использовании опции aot
+            },
+            "development": {                -- разработка [запуск ng build --configuration development]
+              "optimization": false,
+              "sourceMap": true
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",    -- запуск веб-сервера и развертывание на нем скомп прилож
+          "options": {
+            "buildTarget": "helloapp:build"
+          }
+        }
+      }
+    }
+  }
+}
+
+--- app.component.ts ---
+import { Component } from "@angular/core";      // импорт модуля для исп-я декоратора @Component
+import {FormsModule} from "@angular/forms";     // модул для работы с полями ввода
+     
+@Component({                                    // функция-декоратор @Component, которая ассоц метаданные с классом компонента AppComponent
+    selector: "my-app",                         // определяет на странице HTML элемент <my-app> в него будет загружаться приложение Angular
+    standalone: true,                           // независимый компонент, создание доп модулей не требуется(использовать по умолчанию)
+    imports: [FormsModule],                     // импорт модуля FormsModule для использования поля ввода
+    template: `<label>Введите имя:</label>      // визуальная часть компонента, которая отображается в браузере(HTML + код angular)
+                 <input [(ngModel)]="name" placeholder="name">      // поле ввода в модель 'name'
+                 <h1>Добро пожаловать {{name}}!</h1>`               // вывод значения модели 'name'
+    templateUrl:                                // можно вынести в отдельный внешний файл с разметкой html
+})
+export class AppComponent {                     // экспорт класса в котором определена name с пустым значением
+    name= "";                                   // с пустым значением
+}
+
+--- main.ts ---
+// запускает приложение в виде ранее определенного компонента AppComponent
+// при возникновении ошибок они выводятся на консоль
+import { bootstrapApplication } from "@angular/platform-browser";
+import { AppComponent } from "./app/app.components";
+bootstrapApplication(AppComponent).catch(e => console.error(e));            // возвращает promice
+// как вариант последнюю строку можно представить так
+const appRef: ApplicationRef = await bootstrapApplication(AppComponent);    // можно вот так, это и есть приложение
+
+--- index.html ---
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>METANIT.COM</title>
+</head>
+<body>
+    <my-app>Загрузка...</my-app>    -- сюда загружается приложение
+</body>
+</html>
+
+
+=== basic ========================================================================================================
+--- Компоненты ---
+Компонент управляет отображением представления на экране
+
+# src/app/app.component.ts
+import { Component } from "@angular/core";
+      
+@Component({
+    selector: "my-app",
+    standalone: true,
+    template: "<h1>Hello World!</h1>"
+})
+export class AppComponent {}            // экспорт класса, чтобы его можно было использовать вне --+
+                                                                                                   |
+# src/main.ts                                                                                      |
+import { bootstrapApplication } from '@angular/platform-browser';                                  |
+import { AppComponent } from './app/app.component';                 // импорт нашего класса <------+
+bootstrapApplication(AppComponent).catch(e => console.error(e));    // запускает экземпляр приложения Angular 
+                            |                                          и отображает автономный компонент в качестве 
+                            +---------------+                          корневого компонента приложения
+# src/index.html                            |
+<!DOCTYPE html>                             |
+<html>                                      |
+<head>                                      |
+    <meta charset="utf-8" />                |
+    <title>Hello METANIT.COM</title>        |
+</head>                                     |
+<body>                                      |
+    <my-app>Загрузка...</my-app>    <-------+   отображение компонента на странице
+</body>
+</html>
+
+--- Модули ---
+Другой подход(устаревший не рекомендуемый), который применялся до Angular 16
+Модуль служит для объед неск компонентов, которые предназнач для вып-я какой-то общей задачи, в одно целое. 
+Приложение Angular может состоять из нескольких модулей. 
+В этом случае один модуль является корневым или главным (root module). 
+Сначала загружается главный модуль, Согласно условностям, он обычно называется AppModule
+
+--- Стили и шаблоны компонента ---
+import { Component } from "@angular/core";
+ 
+@Component({
+    selector: "my-app",
+    standalone: true,
+    template: `<h1>Hello Angular</h1>                           
+            <p>Приложение Angular состоит из компонентов</p>`,
+    styles: [`                                      -- сдесь определяются стили, действуют только на внутренние элементы <my-app>
+            h1, h2{color:navy;}                        angular 17+ - скобки можно опустить, и передавать строку а не массив
+            p{font-size:13px; font-family:Verdana;}
+            :host {                                 -- :host - ссылка на корневой тэг программы - <my-app>
+                font-family: Verdana;
+                color: #555;
+            }
+    `],
+    templateUrl: './app.component.html',            -- шаблон также можно вынести в отдельный файл .html
+    styleUrls: ['./app.component.css']              -- либо можно вынести в отдельный файл .css
+})
+export class AppComponent { }
+
+--- Привязка ---
+Привязка значений компонентов к частям шаблона
+
+атрибут   - в HTML коде, находятся внутри открывающего тега элемента и имеют имя и значение
+свойство  - в JS коде, во время обращения к элементу через точку
+
+формы привязки данных:
+    1. <h1>Добро пожаловать {{name}}!</h1>          -- {{name}} Привязка элемента DOM к значению компонента (односторонняя)
+    2. <input type="text" [value]="name" />         -- [value] Привязка свойства эл DOM к знач компонента (одностор)
+    3. <button (click)="addItem(txt)">доб</button>  -- (click) Привязка метода компонента к событию в DOM (односторонняя)
+    4. <input [(ngModel)]="nam" placeholder="nam">  -- [(ngModel)] (двусторонняя) привязка, когда элемент DOM привязан к значению 
+                                                       на компоненте, при этом изменения на одном конце привязки сразу приводят к 
+                                                       изменениям на другом конце
+    5. <input [attr.value]="text" />                -- [attr.value] Привязка к атрибуту элемента html
+    6. <div [class.redbox]="isRed"></div>           -- [class.redbox] Привязка к классу CSS, имя класса, кот мы хотим доб/удалить
+    7. <div [style.backgroundColor]="isRed? 'red' : 'green'"> -- [style.backgroundColor] Привязка к стилю элемента html
+                                                                 [style.стилевое_свойство]="выражение ? A : B"
+example:
+    import { Component } from "@angular/core";      
+    @Component({
+        selector: "my-app",
+        standalone: true,
+        imports:[FormsModule],                                      // импортируем FormsModule для двусторонней привязки
+        template: `<input type="text" [value]="name" />`    <----+  // либо так с пом свойства
+                    <input type="text" value="{{name}}" />  <----+  // либо можно так с пом значения
+                    <p>Возраст: {{age}}</p>   <--------+         |  // значение из компонента
+                    <p [textContent]="name"></p>`  <---|---------+  // свойство textContent не у <p> а у
+                    <button (click)="increase($event)">Cl</button>  // онклик функция с передачей события $event(инфо о событии)
+                    <input type="text" [(ngModel)]="name" />`<^--+  // двустороння привязка, необходим импорт FormsModule
+    })                                                 |      |  |
+    export class AppComponent {                        |      |  |
+        name = "Tom";   -------------------------------|------|--+
+        age = 12;       -------------------------------+      |
+        count: number = 0;                                    |
+        increase($event : any) : void { ----------------------+
+            this.count++;
+            console.log($event);
+        }
+    }
+
+--- Условные конструкции ---
+# if-esle
+import { Component} from "@angular/core";
+import { FormsModule } from "@angular/forms";
+ 
+@Component({
+    selector: "my-app",
+    standalone: true,
+    imports: [FormsModule],
+    template:`<div>
+      <input [(ngModel)]="num" type="number" />
+      @if(num==5){
+        <p>Переменная num равна 5</p>
+      } @else if(num==6){
+        <p>Переменная num равна 6</p>
+      } @else {
+        <p>У переменной num неизвестное значение</p>
+      }
+    </div>`
+})
+export class AppComponent {
+    num = 5;
+}
+
+# switch
+import { Component} from "@angular/core";
+import { FormsModule } from "@angular/forms";
+ 
+@Component({
+    selector: "my-app",
+    standalone: true,
+    imports: [FormsModule],
+    template:`<input [(ngModel)]="op" />
+    <p>a = {{a}}  b = {{b}}</p>
+  <p>Результат: 
+      @switch (op) {
+        @case ("+") {
+          {{ a + b }}
+        }
+        @case ("-") {
+          {{ a - b }}
+        }
+        @case ("*") {
+          {{ a * b }}
+        }
+        @default {
+          Неизвестная операция
+        }
+      }
+    </p>`
+})
+export class AppComponent {
+    op = "-"; // символ операции  
+    a = 10;
+    b = 5;
+}
+
+--- Цикл for ---
+import { Component} from "@angular/core";
+ 
+@Component({
+    selector: "my-app",
+    standalone: true,
+    template:`<ul>
+    @for (item of items; track item) {  // track определяет ключ, используемый для связи элементов массива с представлениями в DOM
+          <li>{{ item }}</li>              track $index     - если значения не уникальные
+    }                                      track item.поле  - если итерируемся по объектам с каким-то уникальным полем
+</ul>`
+})
+export class AppComponent {
+    items = ["Tom", "Bob", "Sam"];
+}
+
+Кроме $index внутри цикла мы можем применять значения:
+$count  - количество элементов коллекции
+$first  - является ли текущий элемент первым в коллекции
+$last   - является ли текущий элемент последним в коллекции
+$even   - является ли индекс текущего элемента четным
+$odd    - является ли индекс текущего элемента нечетным
+@for (item of items; track $index) {
+      <li>Item #{{ $index }}: {{ item }} {{$last?"(последний)":""}} {{$first?"(пeрвый)":""}}</li>
+  }
+
+--- Вложенные компоненты ---
+1. Создаем src/app/child.component.ts
+   Дочерние элементы образуют свой контекст, в котором определяют свои переменные, функции, стили и т.д
+
+import { Component } from "@angular/core";
+@Component({
+    selector: 'child-comp',
+    standalone: true,
+    template: `<ng-content></ng-content>            // ng-content - для проброса переменных родителям --+
+               <h2>Еще раз велком наш друг! {{name}}</h2>`,    <----------------------------------------+
+})                                                                                                      |
+export class ChildComponent {                                                                           |
+    name = 'Child';  -----------------------------------------------------------------------------------+
+}                                                                                                       |
+                                                                                                        |
+2. В основном классе делаем импорты, для запуска других компонентов                                     |
+import { ChildComponent } from "./child.component"; // добавляем импорт класса                          |
+                                                                                                        |
+@Component({                                                                                            |
+  imports: [ChildComponent],                        // включаем в наш компонент этот класс              |
+  template: `<div class="container">                                                                    |
+        <h1>Добро пожаловать {{name}}!</h1>  <--+                                                       |
+        <child-comp><h2>Hello from {{name}}</h2></child-comp>   // проброс переменной из доч класса  <--+
+    </div>`})                                   |
+export class AppComponent {                     |
+    name = 'Parent';  --------------------------+
+}
+
+--- Передача данных в дочерний компонент ---
+@Input() означает что эти значения могут устанавливаться из вне(например из родителя)
+
+import { Input, Component} from "@angular/core";  // импорт декоратора
+@Component({
+    selector: 'child-comp',
+    standalone: true,
+    template: `<p>Имя пользователя: {{userName}}</p>
+              <p>Возраст пользователя: {{userAge}}</p>`
+})
+export class ChildComponent{ 
+    @Input() userName: string = "";      <--------------------------------------┐ отрисовка этого значения
+    _userAge: number = 0;                                                       |
+                                                                                |
+    @Input()                                                                    |
+    set userAge(age:number) {               // привязка к сеттеру               |
+        if(age<0)                                                               |
+            this._userAge=0;                                                    |
+        else if(age>100)                                                        |
+            this._userAge=100;                                                  |
+        else                                                                    |
+            this._userAge = age;                                                |
+    }                                                                           |
+    get userAge() { return this._userAge; } // геттер                           |
+}                                                                               |
+                                                                                |
+import { Component } from "@angular/core";                                      |
+import { FormsModule } from '@angular/forms';                                   |
+import {ChildComponent} from './child.component';                               |
+@Component({                                                                    |
+    selector: "my-app",                                                         |
+    standalone: true,                                                           |
+    imports: [ChildComponent, FormsModule],                                     |
+    template: `<child-comp [userName]="name" [userAge]="age"></child-comp>  <---┤ привязка к доч эл
+                <input type="text" [(ngModel)]="name" />`    <-->---------------┤
+})                                                                              |
+export class AppComponent {                                                     |
+    name = "Tom";   <-->--------------------------------------------------------┘ привязка сюда
+    age = 24;
+}
+
+--- Передача в родительский элемент ---
+// child
+@Output() onChanged = new EventEmitter<boolean>();  // EventEmitter<тип> - передать знач типа boolean родителю 
+change(increased: boolean) {    <-----------------------------┐
+    this.onChanged.emit(increased);                           |
+}                                                             |
+                                                              |
+// html-child                                                 |
+`<button (click)="change(true)">+</button>`     <-------------┤
+                                                              |
+// Parent                                                     |
+clicks  = 0;                                                  |
+onChanged(increased:boolean){    <----------------------------┤
+    increased?this.clicks++:this.clicks--;                    |
+}                                                             |
+                                                              |
+// Parent-html                                                |
+`<child-comp (onChanged)="onChanged($event)"></child-comp>` <-┘
