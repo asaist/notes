@@ -1,0 +1,6 @@
+gRPC - remote procedure call
+
+protobuf - бинарные сообщения вместо JSON
+
+
+

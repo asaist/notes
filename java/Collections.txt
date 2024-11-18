@@ -1,0 +1,424 @@
+--- Collections/Коллекции ---
+    Collections - класс для манипуляций с коллекциями
+    Методы
+    sort()
+    binarySearch()
+    reverse()
+    shuffle()
+
+    ● Collection - является “корневый” элементом иерархии коллекций. 
+    Коллекция представляет собой группу объектов, называемых элементами. 
+    Интерфейс описывает функционал присущий абсолютно всем коллекциям.
+    ● Set - коллекция, представляющая собой множество элементов, которое 
+    не может содержать дубликаты.
+    ● List - коллекция, содержащая в себе последовательность элементов. 
+    В этом типе коллекций дубликаты разрешены. List позволяет обращаться к 
+    своим элементам по индексу, добавлять/изменять/удалять элементы.
+    ● Queue - коллекция, позволяющая управлять процессом обработки элементов. 
+    Как правило, работает в режиме FIFO (first-in, first-out, первый вошел - 
+    первый вышел, например, очередь в кабинет). В таком случае элементы 
+    добавляются в хвост, а забираются с головы.
+    ● Deque - коллекция, позволяющая управлять процессом обработки элементов.
+    Deque может использоваться как в режиме FIFO , так и в режиме LIFO 
+    (last-in, first-out, последний вошел - первый вышел, например, в стопку 
+    бумаг кладут сверху листы, и оттуда же их забирают). Deque позволяет 
+    добавлять/изменять/удалять элементы как в голове, так и в хвосте коллекции.    
+    ● Map, коллекция которая отображает ключ, к его значению. Map не может 
+    содержать дублирующиеся ключи.
+    ● SortedSet и SortedMap представляют собой упорядоченные в порядке 
+    возрастания версии коллекций Set (сортировка идет по элементам) и 
+    Map (сортировка производится по ключам).
+
+    Hierarchy:
+                  Iterable
+                     |
+                 Collection
+           /         |         \
+      List        Queue           Set             Map
+    ArrayList   PriorityQueue   HashSet         HashMap
+    LinkedList<-Deque           LinkedHashSet   LinkedHashMap
+    Vector      ArrayDeque      SortedSet       HashTable
+    Stack                       TreeSet         SortedMap
+                                                TreeMap
+
+    Не надо использовать
+    Enumeration -> Iterator
+    Vector      -> ArrayList
+    Stack       -> ArrayDeque
+    Dictionary  -> Map
+    HashTable   -> HashMap
+    LinkedList  -> ArrayList/ArrayDeque
+
+--- ArrayList ---
+
+    package java.util, произошел от List
+    Это обертка над массивом.
+    По памяти ArrayList хранит данные как массив, все рядом. Поэтому выгоднее использовать его вместо LinkedList.
+    Скорость чтения O(1)
+    Скорость вставки O(n)
+    Удаление первого элемента (худший случай) происходит за O(n), для последнего элемента (лучший случай) за O(1). Вставка происходит за O(n).
+    Может менять длину.
+    ArrayList по умолчанию включает в себя массив объектов класса Object.
+    Т.е. элементами массва могут быть любые ссылочные типы данных, так как 
+    все они произошли от Object.
+    Примитивные типы данных не могут содержаться в ArrayList.
+
+    // capacity
+    capacity = 10; по умолчанию, растет автоматически.
+    list.ensureCapacity(1000000);   // увеличить емкость сразу на миллион.
+    list.trimToSize();              // убрать лишнюю емкость
+    
+    // creation
+    ArrayList list = new ArrayList();                   // ListArray Object
+    ArrayList<Object> list = new ArrayList<>();         // the same as above
+    ArrayList<Object> list = new ArrayList<Object>();   // the same as above
+    ArrayList<String> l1 = new ArrayList<>();   // только String objects
+    ArrayList<String> l2 = new ArrayList<>(8);  // capacity = 8, может увелич-ся
+    ArrayList<String> l3 = new ArrayList<>(l1); // из другого листа(разн адреса)
+    ArrayList<String> l4 = new ArrayList<>(Arrays.asList("a","b","c")); // так
+
+    Methods
+    size()                  // -> int, размер списка(кол-во эл-ов)
+    add(DataType el)        // -> boolean, добавить в конец списка
+    add(nt i, DataType el)  // -> boolean, добавить в индекс 'i', остальные сдвиг
+    addAll(ArrayList a)     // -> boolean, добавить в конец элементы
+    addAll(int, ArrayList a)// -> boolean, добавить элементы в индекс 'i'
+    get(int index)          // -> DataType, элемент под индексом 'i'
+    indexOf(Object el)      // -> int, 1-ый индекс запрашиваемого элелента, else -1
+    lastIndexOf(Object el)  // -> int, посл индекс запрашиваемого элелента, else -1
+    set(int i, DataType el) // -> DataType, заменяет элемент под индексом 'i'
+    remove(Object el)       // -> boolean, удаляет элемент ссылка на кот в параметре
+    remove(int index)       // -> DataType, удалить элем по индексу 'index'
+    removeAll(Collection c) // -> boolean, удалить все элем равные элем в коллекц 
+    retainAll(Collection c) // -> boolean, удалить все элем не равные элем в коллек
+    clear()                 // -> void, удалить все элементы
+    isEmpty()               // -> boolean, пустой?
+    contains(Object el)     // -> boolean, есть ли объект в листе?
+    toString()              // -> String, возвращ строковое предст об
+    clone()                 // -> Object, сам массив получ нов адрес, но эл-ты те же
+    toArray()               // -> Object, в Object массив
+    toArray(DataType[] arr) // -> DataType, массив выбранного типа.
+    equals(ArrayList l)     // -> boolean, равны если элементы и их порядок одинак
+
+    Array from list:
+    String[] sArray = aList.toArray(new String[0]); // пишем 0 - авто размер
+    
+    // обход листа + действие
+    l4.forEach(new Consumer<String>() { // с помощью аноним класса Consumer
+            @Override
+            public void accept(String s) {
+                System.out.println(s.length());
+            }
+        });
+    forEach((s)-> System.out.println(s.length());   // -> void, тоже самое(лямбда)
+
+    // сортировка
+    Collections.sort(list)              // -> void, как по словарю
+    l4.sort(new Comparator<String>() {  // -> void, с помощью анонимного класса
+            @Override
+            public int compare(String o1, String o2) {
+                return o1.length() - o2.length();   // тут своя реализация
+            }
+        });
+    l4.sort((o1, o2) -> o1.length() - o2.length()); // то же самое но в лямбда
+
+    while(list.remove("a"));            // удалить все символы 'a' из списка
+    list.removeIf(s -> s.equals("a"));  // то же самое
+
+    Iterator
+    Iterator<String> it = list.iterator();
+    while(it.hasNext()){        // приимущество перед foreach, можно удалять эл
+        System.out.println(it.next());
+    }
+    for (String s : list) {     // the same
+        System.out.println(s);
+    }
+
+--- LinkedList ---
+    Связанный список.
+    Не содержат массивов. Каждые элемент имеет ссылку на предыдущий и
+    последующий элемент. У первого и последнего 1 из ссылок - null.
+    При запросе элемента по индеку - пробегает максимум половину списка.
+    Скорость чтения O(n)
+    Скорость вставки O(1)
+    Подходит для создания структуры FIFO LIFO
+
+    Specific methods:
+    peek()              //
+    peekFirst()         // --> DataType, first элем or null if empty list
+    peekLast()          // --> DataType, last элем or null if empty list
+    pop()               // --> DataType, Удалить first элем == removeFirst()
+    push()              // void, вставить элем в начало списка ==  addFirst()
+    poll()              //
+    pollFirst()         // --> DataType, Удалить first элем or null if empty list
+    pollLast()          // --> DataType, Удалить last элем or null if empty list
+    offerFirst(el)      // --> boolean, вставить в начало
+    offer()             //
+    offerLast(el)       // --> boolean, вставить в конец
+
+--- Vector ---
+    Устаревший synchronized class. В основе содержит массив Object.
+    Используется в многопоточности - но есть методы получше.
+    List<Integer> vList = new Vector<>();   
+    Vector<Integer> vList = new Vector<>(); 
+    
+    Methods:
+    add()
+    get()
+    remove()
+
+--- Stack ---
+    Устаревший synchronized class. Использует принцип LIFO.
+    List<Integer> sList = new Stack<>();
+    Stack<Integer> sList = new Stack<>();
+
+    Methods:
+    push()  // добавить в стек
+    pop()   // изъять из стека
+    peek()  // посмотреть верхний элемент
+
+--- HashMap ---
+    Структура ключ-значение. Содержит внутреннюю таблицу с индексами от 0 до
+    максимальной емкости HashMap, иными словами 0 - capacity-1
+    
+    HashMap<k, v>   # два типа: k-ключ, v-значение (Допустим Integer, String)    
+    Map<Integer, String> dict = new HashMap<>(16, 0.75f);   # create
+
+    По сути, внутри ячейки массива лежит LinkedList, только список односвязный, 
+    либо красное-черное дерево, которое лежит в основе реализации другого класса
+    — TreeMap. Как только в bucket стало 8 лементов LinkedList -> TreeMap.
+    Такой подход позволяет улучшить производительность с O(n) до O(log(n))
+    
+    
+    В ячейках таблицы лежат объекты Node<K,V>, объединенные в LinkedList,
+    которые содержат поля:
+        final int hash; # хэшкод 
+        final K key;    # ключ
+        V value;        # значение
+        Node<K,V> next; # ссылка на след Node если есть или null    
+    
+    capacity=16     # по умолчанию 16, др. можно указать при создании
+                      емкость должна соответствовать числу = степени двойки
+    loadFactor=0.75 # загруженность таблицы: 16*0.75=12 элементов максимум,
+                      если кладем больше - емкость увеличивается вдвое,
+                      происходит перекэширование и записи расклад по новому
+    
+    dict.put(1, "Russia");  # положить по ключу 1 значение "Russia"    
+    При добавлении 1-го ключа+значение из ключа берется его hashcode и как-то
+    совмещается с размером capacity и генерится число от 0 до capacity-1,
+    получается индекс внутренней таблицы HashMap. И наша пара ключ-значение
+    хранится во внутренней таблице под этим индексом, например 4.
+
+    Если следующая пара ключ-значение получают такой же индекс, то проверяется
+    хэшкоды объектов под этим индексом, напр 4, если они разные - то последнему
+    объекту уже лежащему под этим индексом в значение next присваивается
+    новое значение нового объекта - теперь эта ячейка имеет два объекта Node 
+    первый имеет ссылку на другой, а последний в next имеет null.
+
+    Если следующая пара ключ-значение получают такой же индекс и имеют такой
+    же hashCode, то идет сравнение по equals с объектами с таким же хешкодом,
+    если по equals false -> нода опять добавляется в конец ячейки, путем
+    добавления в next последнего там объекта.
+
+    Если следующая пара ключ-значение получают такой же индекс и имеют такой
+    же hashCode и к тому же совпал equals с каким либо объектом - то происходит
+    перезапись прежднего объекта Node на новый.
+
+    LinkedList<Node> - вот что лежит в ячейках таблицы HashMap, часто
+    называют backet или корзина. 
+
+    dict.get(1)             # получить значение по ключу
+    При запросе опять же берется hashcode ключа, совмещается с емкостью,
+    генерится индекс, и по индексу находим нашу пару, забираем значение,
+    если в индексе несколько пар - тут уже ищется по хэшкоду, если нашелся
+    такой hashCode - то смотрим по equals - равен - возвращаем - нет - ищем
+    дальше если есть еще элементы.
+
+    Methods:
+    get(k)              // -> v, get value
+    getOrDefault(k, d)  // -> v, if not -> d
+    put(k, v)           // -> void, put key->value
+    putAll(Map)         // -> void, put another Map
+    putIfAbsent(k, v)   // -> void, put k->v if key absent
+    clear()             // all delete
+    clone()             // 
+    containsKey(k)      // -> boolean
+    containsValue(v)    // -> boolean
+    isEmpty()           // -> boolean
+    remove(k)           // -> val, remove k:v
+    size()              // -> int, count of k:v
+    keySet()            // -> Set of key
+    values()            // -> Set of values
+    entrySet()          // -> Set of (key, values)
+
+    Обход HashMap:
+    map.forEach((s1,s2)-> System.out.println(s1+":"+s2));   // BiConsumer
+    for (Map.Entry<String, String> o : map.entrySet()) {    // for
+        o.getKey()
+        o.getValue()
+    }
+
+--- TreeMap ---
+    Элементы TreeMap сортированные по ключу. В основе лежит красно-черное
+    дерево. Работает быстро, но не так быстро как HashMap.
+    Ключи должны быть Comparable либо при создании указать Comparator.
+
+    Map<String, Integer> tMap = new TreeMap<>();
+    // стандартые методы
+    tMap.put("Ivan", 39);   
+    tMap.get("Ivan");
+    tMap.remove("Ivan");
+    Methods:
+    desendingMap()      // -> TreeMap, reverse
+    headMap(toKey)      // -> TreeMap, объекты сначала до ключа, срез [:toKey]
+    tailMap(fromKey)    // -> TreeMap, объекты начиная с ключа и до конца [fromKey:]
+    subMap(from,to)     // -> TreeMap, срез от и до [from:to]
+    вернуть/удалить-вернуть 1-ый/последний keys/values/EntrySet
+
+--- LinkedHashMap ---
+    Наследник HashMap, хранит информацию о порядке добавления элементов(по умолч)
+    или порядке их использования(put, get..) включить эту опцию тут написав true-+
+    Производительность ниже HashMap.                                        v----+  
+    LinkedHashMap<String, Integer> lhMap = new LinkedHashMap<>(16, 0.75f,false);
+    lhMap.put("Ivan", 39);
+    lhMap.put("Igor", 42);
+    lhMap.put("Ilya", 34);
+    System.out.println(lhMap);
+
+--- HashTable ---
+    Устаревший класс, работает по тем же принципам что и HashMap, но
+    является synchronized. Но для многопоточности следует использовать
+    ConcurrentHashMap.
+    Ни ключ ни значение не могут быть null.
+    Hashtable<String, Integer> htMap = new Hashtable<>();
+    htMap.put("Ivan", 39);
+    htMap.put("Igor", 42);
+    htMap.put("Ilya", 34);
+    System.out.println(htMap.contains(42));
+    System.out.println(htMap);
+
+--- HashSet ---
+    Множество. Хранит уникальные значения.
+    В основе Set лежит Map, при добавлении в HashSet нового значения, на самом
+    деле доб ключ в HashMap и какая-то константа-заглушка в кач значения.
+    Нет порядка элементов.
+
+    Set<String> set = new HashSet<>();  // create
+
+    Methods:
+    add(s)              // -> boolean, add val if not exists
+    addAll(Map)         // -> void, put Collection
+    remove(s)           // -> boolean, remove
+    size()              // -> int, count of val
+    clear()             // -> void, all delete
+    contains(el)        // -> boolean
+    isEmpty()           // -> boolean
+
+    Операции над множествами:
+    set1.addAll(set2)       // U Объединение множеств
+    set1.retainAll(set2)    // ∩ пересечение множеств
+    set1.removeAll(set2)    // \ разность множеств
+
+    // обход + удаление с условием
+    set.removeIf(s -> s.equals("b"));
+
+--- TreeSet ---
+    Хранит элементы в отсортированном по возрастанию порядке.
+    В основе лежит TreeMap: ключи - это элементы TreeSet, значения - заглушка.
+    В основе красно-черное дерево.
+    Элементы должны быть Comparable либо при создании указать Comparator.
+
+    // пример - свой компаратор
+    TreeSet<String> tSet = new TreeSet<>();
+    tSet.add("Ivan");
+    tSet.add("Igor");
+    tSet.add("Ilya");
+    System.out.println(tSet);   // [Igor, Ilya, Ivan]
+
+    Methods:
+    descendingSet()     // -> TreeSet, reverse
+    headSet(toKey)      // -> TreeSet, срез [:toKey]
+    tailSet(fromKey)    // -> TreeSet, срез [fromKey:]
+    subSet(from,to)     // -> TreeSet, срез от и до [from:to]
+
+--- LinkedHashSet ---
+    Наследник HashSet, хранит информацию о порядке добавления элементов.
+    Производительность ниже чем HashSet.
+    В основе лежит HashMap: ключи - элементы LinkedHashSet, значения - заглушка.
+
+    LinkedHashSet<String> lhSet = new LinkedHashSet<>();
+    lhSet.add("Ivan");
+    lhSet.add("Igor");
+    lhSet.add("Ilya");
+    System.out.println(lhSet);  // [Ivan, Igor, Ilya]
+
+    Methods:
+    contains(el)    // -> boolean
+
+--- Queue and LinkedList ---
+    Коллекция хранящая последовательность элементов. Добавляется элемент в 
+    конец очереди, используется из начала очереди.
+    FIFO - first in first out.
+    LinkedList используетя для создания очереди, он имплементирует интерфейсы
+    Queue и Deque(еще одна очередь - двусторонняя).
+
+    Queue<String> queue = new LinkedList<>();   // create
+    queue.add("Ivan")       // -> boolean, доб в кон очер если нет места - исключ
+    queue.offer("Ivan")     // -> boolean, доб в кон очер если есть место
+    queue.remove();         // -> type, удалить 1-ый elem, если нет - исключ
+    queue.poll();           // -> type, удалить 1-ый elem, если нет -> null 
+    queue.element();        // -> 1ый элем, если нет - исключ 
+    queue.peek();           // -> 1ый элем, если нет -> null 
+
+--- PriorityQueue ---
+    Это специальный вид очереди, вкотором используется натуральная сортировка
+    или та которую мы описываем с помощью Comparable или Comparator.
+    Используется тот элемент из очереди, чей приоритет выше, основана на 
+    структуре данных куча. 
+
+    PriorityQueue<Integer> pQueue = new PriorityQueue<>();
+    pQueue.add(42);
+    pQueue.add(5);
+    pQueue.offer(13);
+    pQueue.peek();              // return 5
+    pQueue.remove();            // remove 5
+
+--- Deque and ArrayDeque ---
+    Double ended queue(двунаправленная очередь).
+    Элементы могут использоваться с обоих концов.
+    FIFO and LIFO.
+    В качестве Deque может выступать LinkedList или ArrayDeque.
+
+    ArrayDeque<Integer> deque = new ArrayDeque<>();
+    deque.addFirst(5);      // добавить в начало очереди(исключ если места нет)
+    deque.addLast(13);      // добавить в конец очереди(исключ если места нет)
+    deque.offerFirst(42);   // добавить в начало очереди(если есть место)
+    deque.offerLast(31);    // добавить в конец очереди(если есть место)
+    deque.removeFirst();    // удалить сначала/ичключ
+    deque.removeLast();     // удалить сконца/исключ
+    deque.pollFirst();      // удалить сначала/false
+    deque.pollLast();       // удалить сконца/false
+    deque.getFirst();       // вывести 1-ый эл/исключ
+    deque.getLast();        // вывести посл эл/исключ
+    deque.peekFirst();      // вывести 1-ый эл/null
+    deque.peekLast();       // вывести посл эл/null
+
+--- Iterator ---
+    Обход + модификация коллекции(например удаление)
+    list.iterator() // for List(list - уже сущ объект списка)
+    set.iterator()  // for Set(set - уже сущ объект множества)
+
+    Iterator<String> it = aList.listIterator();
+    while (it.hasNext()) {                      // есть след элемент?
+        if(it.next().equals("a"))               // получить элемент
+            it.remove();                        // удаление элемента
+    }
+    aList.removeIf(s -> s.equals("a"));         // тоже самое удаление
+
+    listIterator() - имеет больше методов чем iterator()
+    ● hasPrevious() - проверка есть ли элемент слева;
+    ● previous() - переход на левый элемент и возврат ссылки на него;
+    ● nextIndex() - получение индекса следующего элемента;
+    ● previousIndex() - получение индекса предыдущего элемента;
+    ● add() - добавить новый элемент на то место, на кот указ итератор;
+    ● set() - изменить элемент, на который указывает итератор.

@@ -1,0 +1,1141 @@
+
+--- Многопоточность ---
+    Многопоточность - принцип построения программы, при котором несколько
+    блоков кода могут выполнятся одновремено.
+
+    Состояние потоков
+    New -> Runnable -> Terminated
+            /     \
+        ready -> running
+    main - главный поток запуск - public static void main(String[] args)
+    Остальные создаваемые потоки работают параллельно main.
+    
+    Потоки бывают обычные и потоки-демоны. 
+    Приложение работает пока хоть 1 обычный поток не завершился.
+    Демонов никто не ждет, программа закроется если все обычные завершены,
+    а демоны могут еще не завершится и хрен с ними.
+    Для каждого потока создается свой stack.
+    Потоки могут заглядывать друг к другу в heap.
+    
+    concurrency - согласованность, вып неск задач потоками(возможно на 1 ядре)
+    parallelism - вып задач одновременно за счет многоядерного процессора 
+    синхронный  - вып задач последовательно друг за другом
+    асинхронный - вып задач не последовательно, переключаясь с одного на др,
+                  на многоядерном процессоре - параллельно.
+
+    Создание потоков: (предпочтительно вариант2/3)        
+    # вариант 1 - унаследоваться от Thread, переопределить run()
+    public class ThreadExampleClass extends Thread {   
+        @Override
+        public void run() {                         // этот метод запустится в 
+            for (int i = 0; i < 10; i++) {             || потоке при вызове 
+                System.out.println("thread-" + i);     метода obj.start().
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public static void main(String[] args) {
+            Thread t = new ThreadExampleClass();
+            t.start();                              // запуск в отдельном потоке
+            // код продолжается выполняться дальше параллельно
+        }
+    }
+
+    # вариант 2 - использовать интерфейс Runnable, переопределить run()
+    public class RunnableExampleClass implements Runnable{
+        @Override
+        public void run() {                         // переопределяем метод
+            for (int i = 0; i < 10; i++) {
+                System.out.println("thread-" + i);
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public static void main(String[] args) {
+            Thread t = new RunnableExampleClass();
+            t.start();                              // запуск в отдельном потоке
+            // код продолжается выполняться дальше
+        }
+    }
+
+    # вариант 3 - анонимный класс/lambda, переопределяем run()
+    public class AnonymousExampleClass {
+        public static void main(String[] args) {
+            Thread t = new Thread(new Runnable() {  // переопределяем на месте
+                @Override                              можно завернуть в lambda
+                public void run() {
+                    for (int i = 0; i < 10; i++) {
+                        System.out.println("thread-" + i);
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+
+            t.start();
+            // код продолжается выполняться дальше
+        }
+    }
+
+    # вариант 3.1 - анонимный поток(самое короткое написание)
+    public static void main(String[] args) {
+        new Thread(() -> {
+            for (int i = 0; i < 10; i++) {
+                System.out.println("1: " + i);
+            }
+        }).start();
+     }
+
+--- tread.join - дождаться выполнения потока ---
+    t.start();                              // запуск потока
+    try {
+        t.join();                           // ждать завершения потока
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+    System.out.println("END");              // продолжить после заверш потока
+
+    // два join подряд работают последовательно
+    t1.join();  // дожидаемся окончания, переходим дальше
+    t2.join();  // если не завершился ждем, иначе проскакиваем
+
+--- Daemon/демон ---
+    Фоновые потоки, выполняют фоновые задачи.
+    Поток завершения которого программа не ждет. Когда все user потоки
+    завершатся - то и программа завершится не дождавшись демонов.
+    Сделать поток демоном невозможно после .start()
+    new Thread().setDaemon()    // create Daemon
+    daemon.isDaemon()           // is it daemon?
+    
+    public class DaemonExample {
+        public static void main(String[] args) {
+            Thread tTimer = new Thread(() -> {
+                for (int i = 0; i < 10; i++) {
+                    System.out.println("thread-" + i);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+
+            tTimer.setDaemon(true);         // исп поток как демон
+            tTimer.start();
+            System.out.println("main -> sleep");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("main: -> end");
+        }
+    }
+
+--- Thread methods ---
+    Thread.currentThread(); // -> Thread, тек поток
+    Thread.sleep(Long ms);  // -> void, заснуть на ms millisecs
+    start()                 // void, запуск потока
+    interrupt()             // -> void, прервать поток, с пом проверки 
+                               Thread.currentThread().isInterrupted() в
+                               определении тела потока. 
+    run()                   // -> void, запуск задачи не в новом потоке
+    join()                  // -> void, ожидание завершения потока
+    join(msec)              // -> void, ожидание заверш потока макс 'm' msec
+    setDaemon(true)         // -> void, преобразовать в поток-демон
+    isDaemon()              // -> boolean, поток - демон?
+    isAlive()               // -> boolean, поток выполняется?
+    isInterrupted()         // -> boolean, поток прерван?
+    setName(String)         // -> void, set name of thread
+    getName()               // -> String, get name of thread
+    getState()              // -> enum State, состояние потока
+    setPriority(i)          // -> void, задать приоритет int [0-10]
+    getPriority()           // -> int, текущий приоритет потока
+    getStacTrace()          // -> StackTraceElement, инфо
+
+--- Thread interruption/Прерывание потоков ---
+    interrupt()     // прервать
+    isInterrupted() // прерван?
+    
+    public class InterruptionEx {
+        public static void main(String[] args) throws InterruptedException {
+            System.out.println("main starts");
+            InterruptedThread thread = new InterruptedThread();
+            thread.start();
+            Thread.sleep(2);
+            thread.interrupt();                     // send signal
+            thread.join();
+            System.out.println("main ends");
+        }
+    }
+
+    class InterruptedThread extends Thread {
+        private double sqrt_sum = 0;
+
+        @Override
+        public void run() {
+            for (int i = 1; i < 1000000000; i++) {
+                if (isInterrupted()) {              // check signal
+                    System.out.println(getName() + " is interrupted");
+                    break;                          // process
+                }
+                sqrt_sum += Math.sqrt(i);
+            }
+            System.out.println(sqrt_sum);
+        }
+    }
+
+    Прервать спящий поток:
+    try {
+            sleep(100);
+        } catch (InterruptedException e) {  // при получении сигнала сработает
+            System.out.println("They want to interrupt " + getName());
+            return;
+        }
+
+--- Ordering/очередность ---
+    // Нет гарантии в очередности потоков, может быть по разному
+    new Thread(() -> System.out.println(1)).start();
+    new Thread(() -> System.out.println(2)).start();
+    new Thread(() -> System.out.println(3)).start();
+
+--- Monitor ---
+    Спец механизм с пом кот вып-ся корректная синхронизация.
+    У каждого объекта/класса есть привяз к нему сущность - монитор.
+    2 статуса монитора: свободен/занят.
+    Используется при использовании synchronized.
+    Когда 1 поток заходит в synchronized блок - монитор становится занятым.
+    В одно и то же время монитор мож быть занят только одним потоком.
+    Остальные потоки будут ждать пока монитор занят, а потом какой-то
+    1 из потоков снова займет монитор зайдя в synchronized block.
+    Любая блокировка с пом синхр-ии идет на объекте/классе, у методов
+    нет никакого монитора.
+
+    Монитор - это объект, используемый в качестве взаимоисключающей 
+    блокировки. Только один поток исполнения может в одно и то же время
+    владеть монитором. Когда поток исполнения запрашивает блокировку, 
+    то говорят, что он входит в монитор. Все другие потоки исполнения, 
+    пытающиеся войти в заблокированный монитор, будут приостановлены
+    до тех пор, пока первый поток не выйдет из монитора. Обо всех прочих
+    потоках говорят, что они ожидают монитор. Поток, владеющий монитором,
+    может, если пожелает, повторно войти в него.
+    Монитор - это тот объект у которого был вызван synchronized метод.
+
+    Конструкторы синхронизировать нельзя.
+
+--- Race(Гонка), synchronized methods---
+    Data Race - потоки пытаются модифицировать одну и ту же переменную
+    возможны расхождения в ожидаемых результатах. Для предотвращения
+    таких ситуаций используют synchronyzed methods.
+    Synchronized methods под капотом используют monitor obj/class, если
+    метод не статичный - то это по умолчанию объект this, если статик
+    метод - monitor класса.
+
+    class C {
+        volatile static int c;                      // volatile
+        public synchronized static void inc() {     // static synchronized
+            c++;
+        }
+    }
+
+    public class Counter implements Runnable {      
+        public void inc() { C.c++; }                // not synchronized
+    }
+    
+    public class SyncCounter implements Runnable {
+        public synchronized void inc() { C.c++; }   // synchronized
+    }
+
+    synchronized - доступ к методам осуществ потоками по очереди,
+    при чем все методы одновременно, т.е. если поток работае с inc()
+    то другой поток будет ждать чтобы использовать inc()
+
+--- Synchronized block ---
+    Работают как synchronized методы, только синхронизируют не весь 
+    код в методе(хотя можно и весь), а лишь его часть, размещается в методе.
+    Снтаксис: synchronized (object) { синхр код; }
+    static final Object lock = new Object();    // obj в кач монитора
+    public void someMethod() {                  // какой-то метод
+        // some code ...
+        synchronized (lock) {                   // sync block
+            Counter.count++;
+            System.out.println(Counter.count);
+        }
+        // some code ...
+    }
+
+    Этот способ подойдет для работы с разными полями класса, на каждое
+    поле свой монитор - чтобы синхронизировать не все методы, а только те
+    которые модифицируют одни и те же данные.
+    Если 2 потока синхронизируются по одному объекту, 
+    то если один занял монитор, второй будет ждать.
+
+    Несколько мониторов:
+    public class SyncMonitorApp {
+        private Object monitor1 = new Object(); // любой объект в кач монитора
+        private Object monitor2 = new Object();
+        private int c1 = 0;
+        private int c2 = 0;
+        public void inc1() { synchronized (monitor1) { с1++; } }
+        public void inc2() { synchronized (monitor2) { с2++; } }
+        public void dec1() { synchronized (monitor1) { с1--; } }
+        public void dec2() { synchronized (monitor2) { с2--  } }
+    }
+
+    Статические sync методы также перехватывают монитор и сам класс
+    не дает обращаться к другим статик методам когда монитор занят.
+    Монитор статик методов - это класс: запись SomeClass.class
+    public synchronized static void def(){}                     // method
+    public static void def(){ synchronized (MyClass.class) }    // block
+
+    Разница
+    synchronized void method(){} == void method(){synchronized (this){}}
+
+--- DeadLock ---
+    DeadLock - ситуация когда 2 или более потоков залочены навсегда, 
+    ожидают друг друга и ничего не делают.
+    
+    LiveLock - ситуация когда 2 или более потоков залочены навсегда, 
+    ожидают друг друга, но проделывают работу без какого-то прогресса.
+
+    Lock starvation - ситуация когда менее приор потоки ждут долгое 
+    время или всегда более приор потоков.
+
+    взаимной блокировкой, которая происходит в том случае,
+    когда потоки исполнения имеют циклическую зависимость от пары 
+    синхронизированных объектов. Допустим, что один поток исполнения входит 
+    в монитор объекта Х, а другой - в монитор объекта У. Если поток исполнения 
+    в объекте Х попытается вызвать любой синхронизированный метод для объекта У, 
+    он будет блокирован, как и предполагалось. Но если поток исполнения в объекте
+    У, в свою очередь, попытается вызвать любой синхронизированный метод для 
+    объекта Х, то этот поток будет ожидать вечно, поскольку для получ доступа к 
+    объекту Х он должен снять свою блокировку с объекта У, чтобы первый поток 
+    исполнения мог завершиться.
+
+--- volatile ---
+    запрещает кэширование переменной внутри процессора, 
+    хранить и сп переменную только в памяти. Использовать
+    когда неcколько потоков работают с одной переменной. Причем
+    когда только 1 поток может изменять перем, остальные - читать.
+    Использовать совместно с synchronized блоками если изменять
+    нужно более чем одному потоку.
+    volatile boolean b = true;  // create
+
+--- wait notify ---
+    Механихм с пом которого потоки извещают друг друга.
+    вызываются на объекте держащим монитор:
+    wait        - освобождает монитор и переводит вызывающий поток в состояние 
+                  ожидания до тех пор, пока другой поток не вызовет метод 
+                  notify()/notifyAll();
+    wait(1000)  - ждать 1 секунду, после снова станет активным потоком
+    notify      - продолжает работу потока, у кот ранее был вызван метод wait(),
+                  НЕ освобождает монитор, продолжает быть активным.
+    notifyAll   - возобн работу всех потоков, у кот был вызван метод wait(),
+                  НЕ освобождает монитор, продолжает быть активным.
+
+    По рекомендации JavaDoc - wait() используется в циклах а не в if,
+    так как поток может пробудиться сам по себе и условие снова не проверит.
+   
+    public class WaitNotifyApp {
+        private final Object mon = new Object();
+        private volatile char currentLatter = 'A';
+  
+        public static void main(String[] args) {
+            WaitNotifyApp waitNotifyApp = new WaitNotifyApp();
+            new Thread(() -> {
+                waitNotifyApp.printA();
+            }).start();
+            new Thread(() -> {
+                waitNotifyApp.printB();
+            }).start();
+
+        }
+
+        public void printA() {
+            synchronized (mon) {
+                try {
+                    for (int i = 0; i<5; i++){
+                        while (currentLatter != 'A'){
+                            mon.wait();
+                        }
+                        System.out.print("A");
+                        currentLatter = 'B';
+                        mon.notifyAll();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void printB() {
+            synchronized (mon) {
+                try {
+                    for (int i = 0; i<5; i++){
+                        while (currentLatter != 'B'){
+                            mon.wait();
+                        }
+                        System.out.print("B");
+                        currentLatter = 'A';
+                        mon.notifyAll();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+--- ExecutorService/пуллы потоков ---
+    Thread pool - множество потоков, каждый из которых предназначен для
+    выполнения той или иной задачи.
+    Принцип работы: в thread pool закидываются задачи и уже внутри регулир
+    кто какую задачу какой поток будет выполнять.
+    Executor - интерфейс с помощью которого идет работа с thread pool.
+    ExecutorService - интерфейс, одна из реализаций Executor.
+    Executors - класс с множеством static methods для создания пулов.
+    java.util.concurrent;   // package
+
+    Виды пулов потоков, creation:
+    newSingleThreadExecutor();  // пул в котором только один рабочий поток
+    newFixedThreadPool( 10 );   // пул с фиксированным количеством потоков
+    newCachedThreadPool();      // пул, кот может автоматически расширяться
+
+    Methods:
+    execute(Runnable)       // void, отдать задачу в пул потоков
+    shutdown()              // void, больше не приним задачи, выполняет текущие,
+                               прекращает работу пула.
+    shutdownNow()           // void, послать Interrupt всем потокам, обраб вручную
+    awaitTermination(time)  // -> boolean, поток в котором вызван этот метод
+                               ждет либо завершения пула, либо указ-го времени,
+                               далее возобнов работу. Используют после shutdown() 
+    isShutDown()            // -> boolean
+    isTerminated()          // -> boolean\
+    submit(Runnable)        // -> Future, объект который можно использовать для 
+                               проверки завершенности выполнения задачи.
+    submit(Callable)        // -> Future, в отличие от Runnable, его метод call()
+                               может возвращать результат
+    invokeAll(Collection)   // -> List<Future>, отдать неск задач на выполнение
+    invokeAny(Collection)   // -> List<Future>, отдать неск задач, выполнить 
+                               хотя бы одну, остальные нет.
+    
+    Example:
+    // 10 рабоч потоков
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
+    // задача, передаваемая на выполнение одному из потоков
+    executorService.execute(new Runnable() {
+        public void run() {
+            System.out.println("Асинхронная задача");
+        }
+    });
+    executorService.shutdown();     // остановить неисп потоки, не приним задачи
+
+    Фабрика потоков для пулла:
+    Подготавливает и настраивает потоки для пулла.
+    Описываем как для приходящей в пулл задачи выделять новый поток.
+    ExecutorService service = Executors.newFixedThreadPool(2, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {   // описываем как созд-ся поток
+            Thread t = new Thread(r);   
+            t.setPriority(10);
+            t.setName("abc");
+            System.out.println("created");
+            return t;
+        }
+    });
+    service.execute(() -> System.out.println(1));   // запуск задачи
+
+--- Callable<V> ---
+    Как и Runnable представляет собой опред задание, кот вып-ся потоком.
+    Но имеет return type НЕ void, а также может выбрасывать Exception.
+    @FunctionalInterface
+    public interface Callable<V> {
+        V call() throws Exception;
+    }
+
+    Runnable and Callable are used in ExecutorService.submit()
+    
+    Methods:
+    service.submit()    // принимает либо Runnable, либо Callable,
+                           перед наш task to thread pool, для выполнения его
+                           одним из потоков(как execute()) и возвр объект Future.
+                           Результат в Future будет только после выполнения task.
+    future.get()        // -> результат выполнения нашего task, если не
+                           завершился - то тек поток болокируется до завершения 
+                           task. Поэтому не используется awaitTermination().
+                           При submit(new Runnable) возвращ результат null.
+    future.isDone()     // -> boolean, завершен task или нет?
+    future.cancel()     // отменить task, если не начался.
+
+    Example with submit():
+    // Runnable
+    ExecutorService executorService = Executors.newFixedThreadPool(2);
+    Future future = executorService.submit(new Runnable() {
+        public void run () {
+            System.out.println("Асинхронная задача");
+        }
+    });
+    future.get(); // вернет null если задача завершилась корректно
+
+    // Callable
+    Future future = executorService.submit(new Callable<>(){
+        public Object call() throws Exception {
+            System.out.println("Асинхронный вызов");
+        return "Результат из потока" ;
+        }
+    });
+    System.out.println("future.get() = " + future.get()); // возвращает данные
+    executorService.shutdown();
+
+--- ScheduledExecutorService ---
+    Установка расписания на запуск потоков из пула.
+    Create:
+    ScheduledExecutorService s = Executors.newScheduledThreadPool(2);
+    Methods:
+    schedule(Runnable, time)    // -> ScheduledFuture, запуск задачи спустя время
+    shutdown()                  // void, больше не приним задачи, вып текущие,
+                                   прекращает работу пула.
+    scheduleAtFixedRate(R,t,p)  // -> ScheduledFuture, запуск задачи спустя время
+                                   периодически снова запускать через время 'p'.
+                                   обычно после такого вызова в тек потоке делают
+                                   sleep() + shutdown() - иначе бесконеч вып-ие.
+    scheduleWithFixedDelay(..)  // -> ScheduledFuture, запуск задачи через время,
+                                   промежутки между концом работы одной задачи и
+                                   начала работы другой - время в парам.
+
+    Examples:
+    schedule(() -> System.out.println("Hi"), 3, TimeUnit.SECONDS);
+    scheduleAtFixedRate(() -> System.out.println("Ok"), 3, 1, TimeUnit.SECONDS);
+    scheduleWithFixedDelay(() -> System.out.println("go"), 2, 1, TimeUnit.SECONDS);
+    
+--- Lock/замок ---
+    Lock - interface. 
+    ReentrantLock - class that implements Lock.
+    Также как ключ слово synchronized нужен для синхронизации потоков.
+
+    package java.util.concurrent;   # различные утилиты по работе с многопоточ.
+    Интерфейс Lock из пакета java.util.concurrent – это продвинутый механизм 
+    синхронизации потоков. По гибкости он выигрывает в сравнении с блоками 
+    синхронизации. Для работы с этим интерфейсом необходимо создать объект 
+    одной из его реализаций:
+
+    Lock lock = new ReentrantLock();
+    lock.lock();
+    // критическая секция
+    lock.unlock();
+    Создаем объект типа Lock и вызываем у него метод lock() – он захватывается. 
+    Если другой поток попытается вызвать этот метод у того же объекта – он будет
+    блокирован до тех пор, пока поток, удерживающий объект lock, не освободит 
+    его через метод unlock(). Тогда этот объект смогут захватить другие потоки.
+
+    Основные отличия между Lock и синхронизированными блоками:
+        ● Синхронизированные блоки не гарантируют, что сохранится порядок 
+          обращения потоков к критической секции;
+        ● Нельзя выйти из синхронизированного блока по времени ожидания (timeout);
+        ● Синхронизированные блоки должны полностью содержаться в одном методе. 
+          Lock может быть захвачен в одном методе, а освобожден в другом.
+
+    Методы интерфейса Lock:
+    lock()      Блокирует объект типа Lock, если это возможно. Если объект уже был
+                заблокирован др потоком -  то поток, вызвавший метод lock(), 
+                блокируется до вызова unlock() тем потоком который захватил lock.
+    tryLock()   Метод пытается заблокировать объект типа Lock, если это возможно. 
+                При удачном блокировании вернет «true». Если же Lock уже был 
+                заблокирован – то «false», и поток, вызвавший tryLock() , 
+                не будет заблокирован.
+    tryLock(long timeout,TimeUnit timeUnit)
+                Похож на tryLock(), но в течение заданного времени пытается 
+                захватить объект Lock. Если нет - то нет.
+    unlock()    Разблокирует объект Lock. Вызывается только потоком, который 
+                владеет блокировкой Lock. При попытке других потоков обратиться 
+                к этому методу будет выдано исключение RuntimeException.
+    lockInterruptibly()
+                Если где-то у потока вызвать interrupt, то в коде где
+                произходит захват lock.lockInterruptibly() - произойдет
+                выброс InterruptedException - где уже можно его обработать
+                вручную и освободить Lock.
+    Example:
+     // lock/unlock делаем в try/finally
+    public static void main(String[] args) {
+        final Lock lock = new ReentrantLock();          // Lock obj
+        new Thread(() -> {                              // 1-st Thread
+            System.out.println("T-BEFORE-LOCK-1");
+            lock.lock();                                // lock()
+            System.out.println("T-GET-LOCK-1");
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                System.out.println("T-END-1");
+                lock.unlock();                          // unlock()
+            }
+        }).start();
+        new Thread(() -> {                              // 2-nd Thread
+            System.out.println("T-BEFORE-LOCK-2");
+            try {
+                if (lock.tryLock(1, TimeUnit.HOURS)) {
+                    lock.lock();
+                    System.out.println("T-GET-LOCK-2");
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        System.out.println("T-END-2");
+                        lock.unlock();
+                    }
+                } else {
+                    System.out.println("T-2-TRY-FALSE-WAITING 1 HOUR");
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+--- ReadWriteLock ---
+    Интерфейс java.util.concurrent.locks.ReadWriteLock – это продвинутый 
+    механизм для блокировки потоков. Он позволяет множеству потоков одновременно
+    читать данные, или только одному потоку – их записывать. Ресурс открыт для 
+    чтения множеству потоков без риска ошибок. Проблемный момент – если несколько
+    потоков одновременно читают и записывают данные.
+    
+    Read Lock   Если нет потоков, которые захватили объект этого типа для записи, 
+                то множество потоков могут захватить его для чтения.
+    Write Lock  Если нет потоков, которые захватили этот объект для записи или 
+                чтения, то только один поток может захватить его для записи.
+        
+    ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    
+    readWriteLock.readLock().lock();
+    // множество читателей может зайти в эту секцию,
+    // если нет записывающих потоков
+    readWriteLock.readLock().unlock();
+    
+    readWriteLock.writeLock().lock();
+    // только один поток-писатель может зайти в эту секцию,
+    // при условии, что ни один из потоков не занимается чтением
+    readWriteLock.writeLock().unlock();
+
+    Example:
+    public static void main(String[] args) {
+        ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+        // read
+        new Thread(() -> {
+            rwl.readLock().lock();
+            try {
+                System.out.println("1-thread-start-reading");
+                Thread.sleep(3000);
+                System.out.println("1-thread-end-reading");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                rwl.readLock().unlock();
+            }
+        }).start();
+
+        new Thread(() -> {
+            rwl.readLock().lock();
+            try {
+                System.out.println("2-thread-start-reading");
+                Thread.sleep(3000);
+                System.out.println("2-thread-end-reading");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                rwl.readLock().unlock();
+            }
+        }).start();
+
+        // write
+        new Thread(() -> {
+            rwl.writeLock().lock();
+            try {
+                System.out.println("3-thread-start-writing");
+                Thread.sleep(3000);
+                System.out.println("3-thread-end-writing");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                rwl.writeLock().unlock();
+            }
+        }).start();
+
+        new Thread(() -> {
+            rwl.writeLock().lock();
+            try {
+                System.out.println("4-thread-start-writing");
+                Thread.sleep(3000);
+                System.out.println("4-thread-end-writing");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                rwl.writeLock().unlock();
+            }
+        }).start();
+    }
+
+--- Коллекции для многопоточности ---
+    // синхронизированные коллекции
+    Vector<String> list = new Vector<>();
+    ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>(); 
+
+    // каждую обычную коллекцию можно преобразовать в синхронизированную
+    Map<String,String> map = new HashMap<>();
+    map = Collections.synchronizedMap(map);
+
+    // Если поток работ со списком, а другой меняет этот список, то созд копия
+    CopyOnWriteArrayList<Integer> copyList = new CopyOnWriteArrayList<>();
+
+    // блокирующая очередь, позволяет потоку входить в режим ожидания если
+       места в очереди нет, также с потоком который извлекает данные, если
+       очередь пуста - будет ожидать.
+    ArrayBlockingQueue<String> arrayBQ = new ArrayBlockingQueue<String>(6);
+
+--- Synchronizer/Синхронизатор ---
+    Это механизм высокого уровня использующий механизмы параллелизма низкого
+    уровня.
+
+--- CountDownLatch/защелка обратного счетчика ---
+    Это синхронизатор - позволяющий любому кол-ву потоков ждать пока
+    не завершится опред кол-во операций.
+    Конструктор принимает кол-во опреаций, кот должны завершится, чтобы 
+    потоки продолжили свою работу.
+    Защелка закрыта пока счетчик не = 0, потоки ждут.
+
+    CountDownLatch latch = new CountDownLatch(3);   // 3 щелчка и все потоки
+                                                       стартуют
+    await()     // ждать пока счетчик не станет = 0(можно задать таймаут)
+    countDown() // убавить счетчик на 1
+
+    Example
+    import java.util.concurrent.CountDownLatch;
+    public static void main(String[] args) {
+        final int THREADS_COUNT = 6;
+        final CountDownLatch countDownLatch = new CountDownLatch(THREADS_COUNT);
+        System.out.println("Start");
+        for (int i = 0; i < THREADS_COUNT; i++) {
+            final int w = i;
+            new Thread(() -> {
+                try {
+                    Thread.sleep(200 + w + (int) (500 + Math.random()));
+                    System.out.println("Thread #" + w + " is ready");
+                    // тут потоки будут ждать пока счетчик не = 0
+                    countDownLatch.countDown(); // убавляем счетчик на 1
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+
+        try {
+            countDownLatch.await();             // поток main ждет завершения 
+        } catch (InterruptedException e) {      // всех потоков(когда счетчик=0)   
+            e.printStackTrace();
+        }
+        System.out.println("Work is completed");
+    }
+    
+--- Semaphore ---
+    Это синхронизотор - позволяющий ограничить доступ к какоему-то ресурсу.
+    Конструктор принимает кол-во потоков, которым Semaphore будет разрешать
+    одновременно использовать этот ресурс.
+
+    Ограничивает количество потоков при работе с ресурсами. Для этого служит 
+    счетчик. Если его значение больше нуля, то потоку разрешается доступ, а 
+    значение уменьшается. Если счетчик равен нулю, то текущий поток блокируется 
+    до освобождения ресурса. 
+    Semaphore smp = new Semaphore(2);   // 2 threads
+    acquire()   // получение доступа  
+    release()   // освобождение  
+
+    Example:
+    import java.util.concurrent.Semaphore;
+    public static void main(String[] args) {
+        Semaphore smp = new Semaphore(2);
+        for (int i = 0; i < 5; i++) {
+            final int w = i;    // счетчик потоков
+            new Thread(() -> {
+                try {
+                    System.out.println("Поток " + w + " перед семафором");
+                    // тут потоки выполняют дальнейший код если счетчик > 0
+                    smp.acquire();  // если счетчик не 0, захват и счетчик-=1
+                    System.out.println("Поток " + w + " получ дост к ресурсу");
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    System.out.println("Поток " + w + " освободил ресурс");
+                    smp.release();  // освободить, увеличить счетчик на 1
+                }
+            }).start();
+        }
+    }
+
+--- CyclicBarrier ---
+    Основной поток создает 6 потоков и ждет, пока каждый из них не закончит 
+    приготовление к работе. CyclicBarrier выполняет синхронизацию заданного 
+    количества потоков в одной точке. Как только заданное количество потоков 
+    заблокировалось (вызовами метода await()) , с них одновременно снимается 
+    блокировка.
+    Старт разом заданного кол-ва потоков.
+    Далее CyclicBarrier снова принимает начальное значение и все по кругу.
+
+    Example:
+    import java.util.concurrent.CyclicBarrier;
+    public static void main(String[] args) {
+        CyclicBarrier cb = new CyclicBarrier(3);
+        for (int i = 0; i < 3; i++) {
+            final int w = i;
+            new Thread(() -> {
+                try {
+                    System.out.println("Поток " + w + " готовится");
+                    Thread.sleep(100 + (int) (3000 * Math.random()));
+                    System.out.println("Поток " + w + " готов");
+                    cb.await();     // убавить счетчик на 1, если 0 - старт все
+                    System.out.println("Поток " + w + " запустился");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+    }
+
+--- Exchanger ---
+    Это синхронизатор, позволяющий обмениваться данными между 2-мя потоками.
+    Получение информации происх одновременно, информация дол быть одного типа
+    данных.
+    Exchanger<T> exchanger = new Exchanger<>(); // создать
+    exchange(T)     // обмен
+
+--- Atomic types ---
+    Для избавления от race condition чтобы к одним данным был одновременный
+    доступ помиио synchronized get set можно использовать атомарные типы данных.
+    import java.util.concurrent.atomic*;    # атомарные типы данных
+    Все операции этих типов - атомарные, т.е. выполняются в один момент времени
+    одним потоком.
+    
+    Example:
+    AtomicInteger ai = new AtomicInteger(10);
+    ai.getAndAdd(2);
+    ai.addAndGet(3);
+    ai.decrementAndGet();
+    ai.incrementAndGet();
+    ai.getAndSet(4);
+
+--- Stream API ---
+    Stream - это последовательность элементов, поддерживающих последовательные
+    и параллельные операции над ними.
+    Stream - интерфейс позволяющий сократить код при работе с коллекциями,
+    массивами а именно операции фильтрации, сортировки.
+    Грубо говоря это поток данных содержащихся в коллекции или массиве.
+    В методах стрима используются lambda.
+    Методы стримма позволяют писать быстрый код для раб с коллекциями.
+    Stream это не поток в программе и не поток чтения/записи файла.
+    Любой поток можно преобразовать в любую коллекцию или массив.
+    Методы stream не меняют саму коллекцию или массив от которой был создан
+    поток.
+
+    Методы stream.
+    Intermediate methods(lazy) на вход получают stream и возвращают stream,
+    не работают пока не вызовется Terminal method. Lazy - не сработает
+    пока что-то не произойдет.
+    Terminal method(eager) - возвращает что-то оличное от stream. Eager - 
+    действующий сразу, нетерпеливый.
+    После использования на потоке terminal method, стрим нельзя переиспользовать.
+
+    // create stream/stream source
+    Stream.empty()          // empty stream
+    Stream.of(elems);       // stream of elements
+    Stream.ofNullable(el);  // stream of 1 obj or empty if obj==null
+    collection.stream();    // stream from collection
+    Arrays.stream(arr);     // stream from array(int/long/double/Object)
+    
+    Stream.generate(Supplier<T>);   // бесконеч генератор, напр Math::random 
+    IntStream.iterate(s, Function); // s - нач значение, x->x+1 - функция
+                                       след = пред+1
+    IntStream.iterate(s, Predicate, Function);  // то же но с условием
+    String.chars()          // -> IntStream, поток массива int из строки 
+    Pattern.splitAsStream() // stream from regex
+    Stream.concat(stream2, stream3) // -> Stream, concat streams
+
+    // работа с коллекциями
+    List<String> list = new ArrayList<>();      // List
+    list.stream();                              // Поток всех элементов списка
+    list.stream().map(el -> el.length());       // новый поток с результами
+    list.stream().collect(Collectors.toSet())   // list -> set
+    set.stream().collect(Collectors.toList())   // set -> list
+
+    // создаем поток из коллекции, применяем метод, 
+    // полученный поток преобразуем в коллекцию
+    list.stream().map(el -> el.length()).collect(Collectors.toList());  // toList
+    list.stream().map(el -> el.length()).toList();                      // Java16
+
+    // работа с массивами
+    int[] array = {1,6,3,0,5};
+    Arrays.stream(array);                   // получить поток из массива
+    Arrays.stream(array).map(el -> el*el);  // новый поток с результами
+    Arrays.stream(array).map(el -> el * el).toArray();  // новый массив
+
+    
+    // работа с файлами
+    Files.lines(Paths.get("1.txt")) // получаем поток и вертим им как хотим
+            .map(s -> s.toUpperCase(Locale.ROOT))
+            .forEach(System.out::println);
+
+    Specialized streams
+    Содержат доп спец методы (sum, max, min, count, range, rangeClosed)
+    IntStream()     // int
+    DoubleStream()  // double
+    LongStream()    // long
+    Example: generator
+    IntStream.range(0,10).forEach(System.out::println);         // [0;10)
+    IntStream.rangeClosed(0,10).forEach(System.out::println);   // [0;10]
+
+--- Optional<T> ---
+    класс - контейнер-обертка над типом данных.
+    Хранит либо значение(не null), либо его отсутствие.
+    Optional.of(obj);           // create, if null - exception
+    Optional.ofNullable(obj)    // если null - пустой Optional
+    Methods:    
+    isPresent()                 // -> boolean, проверка на null.
+    ifPresent(Consumer<T>)      // -> void, если не пустой вып accept()
+    get()                       // -> Type, возвращает объект типа.
+    orElse(val)                 // -> val, если коробка пуста вернуть val.
+    Example:
+    Optional<Integer> optional = list.stream().reduce((acc, el) -> acc * el);
+    if (optional.isPresent()) System.out.println(optional.get());   // get
+    optional.ifPresent(System.out::println);                        // the same
+
+--- Stream Methods ---
+    i - intermediate method(lazy)
+    t - terminal method(eager)
+    map(Function<T,R>)      // -> Stream, применяет Function к каждому эл.  (i)
+    filter(Predicate<E>)    // -> Stream, фильтрует данные из набора        (i)
+    forEach(Consumer<T>)    // -> void, обход элементов                     (t)
+    
+    reduce() агрегатная функция - производит операции над элементами,
+    вычисляет одно общее значение и возвращает его в виде Optional.
+    Example: reduce((acc, el) -> acc * el)
+        acc - общ знач кот вычисл и потом возвращ, изначально = 1-му эл
+        el  - каждый элемент коллекции/массива, изнач = 2-му эл
+        по нашей lambda значение acc увеличивается на произведение на сл эл
+        acc *= el
+        в результате после прохождения всей коллекции возвращается acc.
+    reduce(BinaryOperator<T>)       // -> Optional, возвращ аккумулир знач  (t)
+    reduce(T i, BinaryOperator<T>)  // -> Type, acc=i, el=1-й эл            (t)
+    
+    sorted()                // -> Stream, сортир поток Comparable эл        (i)
+    sorted(Comparator)      // -> Stream, сортир поток                      (i)
+    distinct()              // -> Stream, uniq elements                     (i)
+    peek(Consumer<T>)       // -> Stream, обход элем (подглядеть/отладка)   (i)
+    limit(long n)           // -> Stream, limit(n) of elements              (i)
+    skip(long n)            // -> Stream, skip n-first elements             (i)
+    takeWhile(Predicate<T>) // -> Stream, пока условие верно доб в поток    (i)
+    dropWhile(Predicate<T>) // -> Stream, пока true не доб, после доб отал  (i)
+    boxed()                 // -> IntStrem -> Stream<Integer> напр          (i)
+    
+    // Сборка коллекций, других типов с пом collect()
+    collect()               // -> Collection, собирает коллекции            (t)
+                                  Collectors.toMap()/toList()/toSet()
+    collect(Collectors.groupingBy(Function<T,R>))   // -> Map, group by     (t)
+                                                       map с группами
+    collect(Collectors.partitioningBy(Predicate<T>) // -> Map, separ by     (t)
+                                                       map из 2-х эл t|f
+    collect(Collectors.joining(delimeter,pre,suf))  // -> String, 0,1,3 par (t)
+
+    allMatch(Predicate<T>)  // -> boolean, все ли эл соотв условию          (t)
+    anyMatch(Predicate<T>)  // -> boolean, хоть 1 эл соотв условию          (t)
+    noneMatch(Predicate<T>) // -> boolean, не 1 эл не соотв условию         (t)
+    count()                 // -> long, count of elements                   (t)
+    findAny().ifPresent()   // -> Optional, первый попавшийся элемент       (t)
+    findFirst()             // -> Optional, first element of stream         (t)
+    min(Comparator<T>)      // -> Type, min element                         (t)
+    max(Comparator<T>)      // -> Type, max element                         (t)
+        
+    Преобразование к спец потокам как map:
+    mapToInt(Function<>)    // -> IntStream, stream of Integers             (i)
+                               IntStream может исп sum, avg, min .. methods
+    mapToDouble(Function<>) // -> DoubleStream, stream to DoubleStream      (i)    
+    mapToLong(Function<>)   // -> LongStream, stream to LongStream          (i)  
+    
+    Поток из потоков вложенных коллекций:
+    flatMap(Function<T>, Stream<R>) // -> Stream, стрим стримов влож кол-й  (i)
+    flatMapToInt()                  // -> Stream of int                     (i)
+    flatMapToDouble()               // -> Stream of double                  (i)
+    flatMapToLong()                 // -> Stream of long                    (i)
+
+    Examples:
+    // сортировка по полю 'name' с типом String
+    stream().sorted(Comparator.comparing(MyClass::getName)
+    
+    list.stream().map(element -> element.length()).toList();
+    students.stream().filter(student -> student.sex == 'w').toList();
+    Arrays.stream(array).forEach(value -> System.out.print(value * 2));
+    int i = list.stream().reduce(1, (acc, el) -> acc * el);
+    String s = strings.stream().reduce((acc, el) -> acc + " " + el).get();
+    Stream.concat(stream2, stream3);
+    System.out.println(stream5.distinct().toList());
+    System.out.println(stream1.distinct().count());
+    System.out.println(stream5.distinct().peek(System.out::println).count());
+    facultyList.stream().flatMap(faculty -> faculty.getStudents().stream())
+            .forEach(System.out::println);
+    Map<Character, List<Student>> map1 =  students.stream()
+            .collect(Collectors.groupingBy(student -> student.getSex()));
+    Map<Boolean, List<Student>> map2 =  students.stream()
+            .collect(Collectors.partitioningBy(el->el.getAvgGrade()>7));
+    List<Integer> courses = students.stream()
+            .mapToInt(el->el.getAge())
+            .boxed()    // boxing вручную
+            .collect(Collectors.toList());
+    int sum = students.stream().mapToInt(el -> el.age).sum();   // сумма!
+    int max = students.stream().mapToInt(el -> el.age).max().getAsInt();
+
+--- Stream Chaining ---
+    Из методов можно делать цепочки - передавая поток с одного в другой.
+    Source(колл/массив) -> intermediate methods(lazy) -> Terminal method(eager)   
+    Example:                     
+    Arrays.stream(array)                                
+            .filter(e -> e % 2 != 0)                    // intermediate method
+            .map(e ->                                   // intermediate method
+            {
+                if (e % 3 == 0) e = -1;
+                return e;
+            })
+            .sorted()                                   // intermediate method
+            .forEach(el -> System.out.print(el + " ")); // terminal method
+
+--- Parallel stream  ---
+    Возможность исп неск ядер процессора при вып операций со stream.
+    Целесообразно для большого количества элементов.
+    Коллекция делится и выполняются нужные операции, потом результаты 
+    между собой. Деление не подходит - здесь важен порядок.    
+    create:
+    list.parallelStream();          // из коллекций/массивов
+    Stream<T> s = Stream.of(...);   // с нуля
+    s.parallel();
+
+--- File IO ---
+    Input/Output
+    Stream для работы с файлами - упорядоченная последовательность данных.
+    Не имеет ничего общего с интерфейсом Stream.
+    Character Streams - для работы с символами(текстовые файлы).
+    Byte Streams - для работы с байтами(бинарные файлы).
+    java.io;    // пакет для работы с этими потоками.
+
+    --- Text Files Streams ---
+        Чтение/запись текстовых файлов.
+
+        Reading/Чтение:
+        FileReader(path) -  класс для чтения файла - читает посимвольно. 
+                            Созд-ся стрим на чтение из файла, path может быть 
+                            путем или классом File.    Methods:
+        read()              // -> int, reed the symbol, if not symbol return -1
+        close()             // close the file
+        
+        BufferedReader(new FileReader(path)) - класс для чтения использ буферизацию
+                                               более эффективный чем FileReader
+        read()              // -> int, читает посимвольно
+        readline()          // -> String, читает построчно
+
+        
+        Example:
+        try (FileReader reader = new FileReader(path);
+            BufferedReader bReader = new BufferedReader(new FileReader(path)) {
+            int character;
+            while ((character = reader.read()) != -1) { // FileReader
+                System.out.print((char) character);
+            }
+            String line;
+            while ((line = bReader.readLine()) !=null){  // BufferedReader 
+                System.out.print(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Writing/Запись:
+        FileWriter(path) -  класс для записи символов в текстовый файл
+                            создать стрим на запись(создастся новый файл или
+                            откроется существующий<path>). path - абсолютный
+                            или относительный путь. Также может приним File.
+                            И еще параметр append true/false (дозапись).
+        write(String/int)   // записать строку/символ в файл, в случае со строкой
+                            запись все равно идет посимвольно
+        append(String)      // дозапись
+        close()             // закрыть стрим - без этого записи не будет
+
+        BufferedWriter(new FileWriter(path)) - класс для записи исп буфферизацию
+                                            более эффективный чем FileWriter
+        write()             // записывает строки/символы/массивы символов
+
+        // Example:
+        String rubai = "Hello";
+        // try with resourses - automatically closes the file
+        try (FileWriter writer = new FileWriter(path);
+            BufferedWriter bWriter = new BufferedWriter(new FileWriter(path))) {
+            for (int i = 0; i < rubai.length(); i++) {
+                writer.write(rubai.charAt(i));  // записать посимвольно вручную
+            }
+            writer.write("\n\n" + rubai);       // посимвольно но автоматом
+            bWriter.write("string");            // BufferedWriter
+            System.out.println("Done!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    --- Binary Files Streams ---
+        Работа с бинарными файлами. Все тоже самое как и с текстовыми файлами.
+        InputStream  - абстрактный класс для чтения имеет различные реализации.
+        OutputStream - абстрактный класс для записи имеет различные реализации.
+
+        FileInputStream(path)                               // read file
+        FileOutputStream(path)                              // write to file
+        BufferedInputStream(new FileInputStream(path))      // read with buffer
+        BufferedOutputStream(new FileOutputStream(path))    // write with buffer
+        ByteArrayInputStream(byte[])                        // read array of bytes
+        ByteArrayOutputStream()                             // write to bytes's array
+        DataOutputStream(new FileOutputStream(path))        // write primitive
+        DataInputStream(new FileInputStream(path))          // read primitive
+        ObjectInputStream(new FileInputStream(path))        // read object
+        ObjectOutputStream(new FileOutputStream(path))      // write object
+
+        Example: copy image
+        try (FileInputStream inputStream = new FileInputStream(path1);
+            FileOutputStream outputStream = new FileOutputStream(path2)) {
+            int i;
+            while ((i = inputStream.read()) != -1) {
+                outputStream.write(i);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+    --- Primitive data types to file ---
+        Чтение и запись примитивных типов данных в бинарные файлы.
+        DataOutputStream(new FileOutputStream(path))    - запись
+        DataInputStream(new FileInputStream(path))      - чтение
+
+        Methods: записывается люб примитивный тип в файл(бинарный файл)
+        writeBoolean(true)
+        writeByte(5)
+        ...
+        writeDouble(3.14)
+        writeUTF("Hello")
+        ---
+        readBoolean()
+        readByte()
+        ...
+        readDouble()
+        readUTF()
